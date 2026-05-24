@@ -1,1 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact — EvaMariaDreams</title>
+  <meta name="description" content="Contact EvaMariaDreams studio.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f6faff;
+      --text:#13253f;
+      --muted:#6a7f97;
+      --line:rgba(76,109,154,.14);
+      --panel:rgba(255,255,255,.78);
+      --primary:#63b4ff;
+      --primary2:#81dfff;
+      --shadow:0 24px 60px rgba(55,94,145,.14);
+      --max:960px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family:"Inter",sans-serif;
+      color:var(--text);
+      background:
+        radial-gradient(circle at 10% 10%, rgba(151,214,255,.45), transparent 24%),
+        linear-gradient(180deg,#f7fbff 0%,#eef6ff 100%);
+    }
+    a{text-decoration:none;color:inherit}
+    .container{width:min(var(--max),calc(100% - 24px));margin:0 auto}
+    .topbar{
+      position:sticky;top:0;z-index:20;
+      background:rgba(247,251,255,.74);
+      backdrop-filter:blur(18px);
+      border-bottom:1px solid rgba(76,109,154,.08);
+    }
+    .nav{
+      min-height:76px;
+      display:flex;align-items:center;justify-content:space-between;gap:20px;
+    }
+    .brand{font-weight:800;letter-spacing:-.03em}
+    .back{color:var(--muted);font-weight:600;font-size:14px}
+    .hero{padding:56px 0 70px}
+    .panel{
+      padding:32px;
+      border-radius:28px;
+      background:var(--panel);
+      border:1px solid var(--line);
+      box-shadow:var(--shadow);
+    }
+    .kicker{
+      color:#6b88a7;
+      font-size:12px;
+      font-weight:800;
+      letter-spacing:.14em;
+      text-transform:uppercase;
+      margin-bottom:12px;
+    }
+    h1{
+      margin:0;
+      font-size:clamp(36px,6vw,64px);
+      line-height:.98;
+      letter-spacing:-.05em;
+    }
+    p{
+      color:var(--muted);
+      line-height:1.8;
+      font-size:17px;
+      max-width:54ch;
+    }
+    .actions{
+      display:flex;
+      flex-wrap:wrap;
+      gap:14px;
+      margin-top:24px;
+    }
+    .button{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      min-height:48px;
+      padding:0 20px;
+      border-radius:999px;
+      border:1px solid transparent;
+      font-weight:700;
+      transition:.22s ease;
+    }
+    .primary{
+      color:#fff;
+      background:linear-gradient(135deg,#5db3ff,#7be0ff);
+      box-shadow:0 16px 34px rgba(93,179,255,.28);
+    }
+    .secondary{
+      background:rgba(255,255,255,.82);
+      border-color:rgba(76,109,154,.12);
+    }
+    .small{
+      margin-top:22px;
+      font-size:14px;
+      color:var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container nav">
+      <a class="brand" href="index.html">EvaMariaDreams</a>
+      <a class="back" href="index.html">Back to home</a>
+    </div>
+  </header>
 
+  <main class="hero">
+    <div class="container">
+      <section class="panel">
+        <div class="kicker">Contact</div>
+        <h1>Say hello.</h1>
+        <p>
+          For studio inquiries, product questions, collaboration, or support related to Octi Flow,
+          please get in touch by email.
+        </p>
+
+        <div class="actions">
+          <a class="button primary" href="mailto:anansi2018@gmail.com?subject=EvaMariaDreams%20Inquiry">Email studio</a>
+          <a class="button secondary" href="support.html">Support page</a>
+        </div>
+
+        <div class="small">
+          We usually reply through the developer contact email associated with the project.
+        </div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>
