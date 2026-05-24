@@ -10,97 +10,192 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root{
-      --bg:#f6faff;
+      --bg:#f4f9ff;
+      --bg-soft:#edf5ff;
+      --panel:rgba(255,255,255,0.82);
       --text:#13253f;
-      --muted:#6a7f97;
-      --line:rgba(76,109,154,.14);
-      --panel:rgba(255,255,255,.78);
-      --primary:#63b4ff;
-      --primary2:#81dfff;
-      --shadow:0 24px 60px rgba(55,94,145,.14);
-      --max:960px;
+      --muted:#6c8198;
+      --line:rgba(77,109,154,0.12);
+      --primary:#69bbff;
+      --primary2:#86e2ff;
+      --shadow:0 24px 60px rgba(52,92,145,0.14);
+      --max:1180px;
     }
+
     *{box-sizing:border-box}
+    html,body{margin:0;padding:0}
     body{
-      margin:0;
       font-family:"Inter",sans-serif;
       color:var(--text);
+      min-height:100vh;
       background:
-        radial-gradient(circle at 10% 10%, rgba(151,214,255,.45), transparent 24%),
-        linear-gradient(180deg,#f7fbff 0%,#eef6ff 100%);
+        radial-gradient(circle at 12% 18%, rgba(150,214,255,0.30), transparent 26%),
+        radial-gradient(circle at 88% 12%, rgba(173,201,255,0.18), transparent 18%),
+        linear-gradient(180deg, #f8fbff 0%, #eef6ff 52%, #f7fbff 100%);
     }
+
     a{text-decoration:none;color:inherit}
-    .container{width:min(var(--max),calc(100% - 24px));margin:0 auto}
+
     .topbar{
-      position:sticky;top:0;z-index:20;
-      background:rgba(247,251,255,.74);
-      backdrop-filter:blur(18px);
-      border-bottom:1px solid rgba(76,109,154,.08);
+      position:sticky;
+      top:0;
+      z-index:10;
+      background:rgba(248,251,255,0.78);
+      backdrop-filter:blur(16px);
+      border-bottom:1px solid rgba(77,109,154,0.08);
     }
+
+    .container{
+      width:min(var(--max), calc(100% - 32px));
+      margin:0 auto;
+    }
+
     .nav{
-      min-height:76px;
-      display:flex;align-items:center;justify-content:space-between;gap:20px;
+      min-height:82px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:20px;
     }
-    .brand{font-weight:800;letter-spacing:-.03em}
-    .back{color:var(--muted);font-weight:600;font-size:14px}
-    .hero{padding:56px 0 70px}
+
+    .brand{
+      font-size:18px;
+      font-weight:800;
+      letter-spacing:-0.03em;
+    }
+
+    .back{
+      font-size:14px;
+      font-weight:600;
+      color:var(--muted);
+    }
+
+    .hero{
+      min-height:calc(100vh - 82px);
+      display:flex;
+      align-items:center;
+      padding:56px 0;
+    }
+
     .panel{
-      padding:32px;
-      border-radius:28px;
-      background:var(--panel);
+      width:min(100%, 920px);
+      margin:0 auto;
+      padding:48px 52px;
+      border-radius:34px;
+      background:linear-gradient(180deg, rgba(255,255,255,0.90), rgba(255,255,255,0.74));
       border:1px solid var(--line);
       box-shadow:var(--shadow);
+      backdrop-filter:blur(18px);
     }
+
     .kicker{
-      color:#6b88a7;
+      margin:0 0 14px 0;
       font-size:12px;
       font-weight:800;
-      letter-spacing:.14em;
+      letter-spacing:0.14em;
       text-transform:uppercase;
-      margin-bottom:12px;
+      color:#6c88a8;
     }
+
     h1{
       margin:0;
-      font-size:clamp(36px,6vw,64px);
-      line-height:.98;
-      letter-spacing:-.05em;
+      font-size:clamp(52px, 8vw, 88px);
+      line-height:0.94;
+      letter-spacing:-0.06em;
     }
-    p{
+
+    .lead{
+      margin:22px 0 0 0;
+      max-width:640px;
+      font-size:clamp(18px, 2vw, 22px);
+      line-height:1.75;
       color:var(--muted);
-      line-height:1.8;
-      font-size:17px;
-      max-width:54ch;
     }
+
     .actions{
       display:flex;
       flex-wrap:wrap;
       gap:14px;
-      margin-top:24px;
+      margin-top:30px;
     }
+
     .button{
       display:inline-flex;
       align-items:center;
       justify-content:center;
-      min-height:48px;
-      padding:0 20px;
+      min-height:52px;
+      padding:0 22px;
       border-radius:999px;
       border:1px solid transparent;
+      font-size:15px;
       font-weight:700;
-      transition:.22s ease;
+      transition:0.22s ease;
     }
-    .primary{
+
+    .button-primary{
       color:#fff;
-      background:linear-gradient(135deg,#5db3ff,#7be0ff);
-      box-shadow:0 16px 34px rgba(93,179,255,.28);
+      background:linear-gradient(135deg, #5eb4ff, #7ee1ff);
+      box-shadow:0 16px 34px rgba(94,180,255,0.28);
     }
-    .secondary{
-      background:rgba(255,255,255,.82);
-      border-color:rgba(76,109,154,.12);
+
+    .button-primary:hover{
+      transform:translateY(-2px);
+      box-shadow:0 22px 40px rgba(94,180,255,0.34);
     }
-    .small{
-      margin-top:22px;
+
+    .button-secondary{
+      background:rgba(255,255,255,0.80);
+      border-color:rgba(77,109,154,0.12);
+      color:var(--text);
+    }
+
+    .meta{
+      margin-top:26px;
       font-size:14px;
+      line-height:1.8;
       color:var(--muted);
+      max-width:700px;
+    }
+
+    .soft-line{
+      width:100%;
+      height:1px;
+      margin:28px 0 0 0;
+      background:linear-gradient(90deg, rgba(77,109,154,0), rgba(77,109,154,0.14), rgba(77,109,154,0));
+    }
+
+    @media (max-width: 720px){
+      .container{
+        width:min(var(--max), calc(100% - 20px));
+      }
+
+      .nav{
+        min-height:74px;
+      }
+
+      .hero{
+        min-height:calc(100vh - 74px);
+        padding:28px 0 36px;
+        align-items:flex-start;
+      }
+
+      .panel{
+        padding:30px 22px;
+        border-radius:26px;
+      }
+
+      h1{
+        font-size:clamp(40px, 14vw, 58px);
+      }
+
+      .lead{
+        font-size:16px;
+        line-height:1.7;
+      }
+
+      .button{
+        width:100%;
+      }
     }
   </style>
 </head>
@@ -115,21 +210,24 @@
   <main class="hero">
     <div class="container">
       <section class="panel">
-        <div class="kicker">Contact</div>
+        <p class="kicker">Contact</p>
         <h1>Say hello.</h1>
-        <p>
-          For studio inquiries, product questions, collaboration, or support related to Octi Flow,
-          please get in touch by email.
+
+        <p class="lead">
+          For studio inquiries, collaboration, product questions, or support related to Octi Flow,
+          please get in touch by email. This page keeps the contact path simple and calm, without exposing the address on the home screen.
         </p>
 
         <div class="actions">
-          <a class="button primary" href="mailto:anansi2018@gmail.com?subject=EvaMariaDreams%20Inquiry">Email studio</a>
-          <a class="button secondary" href="support.html">Support page</a>
+          <a class="button button-primary" href="mailto:anansi2018@gmail.com?subject=EvaMariaDreams%20Inquiry">Email studio</a>
+          <a class="button button-secondary" href="support.html">Support page</a>
         </div>
 
-        <div class="small">
-          We usually reply through the developer contact email associated with the project.
-        </div>
+        <div class="soft-line"></div>
+
+        <p class="meta">
+          For app-related requests, feedback, or partnership inquiries, the studio usually replies through the developer contact email associated with the project.
+        </p>
       </section>
     </div>
   </main>
