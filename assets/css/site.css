@@ -462,3 +462,15 @@ footer {
     transform: none;
   }
 }
+/* Contact section spacing */
+.document-status {
+  margin-bottom: var(--s4);
+}
+
+#contact {
+  padding-top: 0;
+}
+
+#contact .contact-card {
+  margin-top: 12px;
+}
