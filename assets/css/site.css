@@ -524,13 +524,18 @@ footer {
 .contact-directory {
   display: flex;
   flex-direction: column;
-  gap: var(--s3);
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  text-align: left;
 }
 
 .contact-directory-item {
-  margin: 0;
   padding: var(--s4);
-  text-align: left;
+}
+
+.contact-directory-item + .contact-directory-item {
+  border-top: 1px solid rgba(255, 255, 255, 0.22);
 }
 
 .contact-directory-item h2 {
@@ -549,10 +554,6 @@ footer {
   .contact-page {
     padding-top: var(--s4);
     padding-bottom: var(--s4);
-  }
-
-  .contact-directory {
-    gap: var(--s2);
   }
 
   .contact-directory-item {
