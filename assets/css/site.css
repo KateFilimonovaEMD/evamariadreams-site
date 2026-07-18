@@ -462,15 +462,29 @@ footer {
     transform: none;
   }
 }
-/* Contact section spacing */
-.document-status {
-  margin-bottom: var(--s4);
+/* Contact and status block: final layout correction */
+
+.policy > .document-status {
+  display: inline-flex;
+  margin: var(--s4) 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #edf8fc;
+  color: var(--deep);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
-#contact {
-  padding-top: 0;
+.policy > #contact {
+  padding: 0 0 var(--s5);
+  border-bottom: 0;
 }
 
-#contact .contact-card {
-  margin-top: 12px;
+.policy > #contact h2 {
+  margin: 0 0 16px;
+}
+
+.policy > #contact .contact-card {
+  margin: 0;
 }
