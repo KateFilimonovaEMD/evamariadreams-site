@@ -465,7 +465,8 @@ footer {
 /* Final status and contact layout */
 
 .policy > .document-status {
-  display: inline-flex;
+  display: flex;
+  width: fit-content;
   align-items: center;
   gap: 8px;
   margin: var(--s4) 0 var(--s4) auto;
