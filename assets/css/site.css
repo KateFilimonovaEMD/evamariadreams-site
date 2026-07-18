@@ -468,7 +468,7 @@ footer {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  margin: var(--s4) 0;
+  margin: var(--s4) 0 var(--s4) auto;
   padding: 9px 14px;
   border: 1px solid #dce7ed;
   border-radius: 999px;
