@@ -512,3 +512,50 @@ footer {
   margin: 0;
   text-align: center;
 }
+
+/* Contact page */
+
+.contact-page {
+  max-width: 760px;
+  padding-top: var(--s6);
+  padding-bottom: var(--s6);
+}
+
+.contact-directory {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+
+.contact-directory-item {
+  margin: 0;
+  padding: var(--s4);
+  text-align: left;
+}
+
+.contact-directory-item h2 {
+  margin: 0;
+}
+
+.contact-directory-item p {
+  margin: 8px 0 12px;
+}
+
+.contact-directory-item a {
+  display: inline-block;
+}
+
+@media (max-width: 820px) {
+  .contact-page {
+    padding-top: var(--s4);
+    padding-bottom: var(--s4);
+  }
+
+  .contact-directory {
+    gap: var(--s2);
+  }
+
+  .contact-directory-item {
+    padding: var(--s3);
+  }
+}
