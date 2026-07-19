@@ -241,12 +241,10 @@ nav {
   line-height: 1.25;
   transition:
     background-color 0.18s ease,
-    color 0.18s ease,
-    padding-left 0.18s ease;
+    color 0.18s ease;
 }
 
 .toc-menu a:hover {
-  padding-left: 20px;
   background: #f1f9fc;
   color: var(--deep);
 }
