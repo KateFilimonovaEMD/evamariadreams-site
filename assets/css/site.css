@@ -1279,3 +1279,9 @@ footer {
     min-height: 330px;
   }
 }
+@media (max-width: 820px) {
+  .toc-menu > a:active {
+    background: #e4f3f9 !important;
+    color: var(--blue) !important;
+  }
+}
