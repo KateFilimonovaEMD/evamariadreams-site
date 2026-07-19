@@ -1,179 +1,270 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Octi Flow — EvaMariaDreams</title>
-  <meta name="description" content="Octi Flow is a wellness-oriented app designed to support hydration-related routines with clarity, reminders, and personalization.">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css">
-</head>
-<body>
-  <header class="topbar">
-    <div class="container nav">
-      <a class="brand" href="index.html">EvaMariaDreams</a>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#073080">
+  <meta name="robots" content="index,follow">
 
-      <nav class="nav-links" aria-label="Primary">
-        <a href="octi-flow.html">Octi Flow</a>
-        <a href="about.html">About</a>
-        <a href="faq.html">FAQ</a>
-        <a href="press-kit.html">Press Kit</a>
-        <a href="support.html">Support</a>
-        <a href="contact.html">Contact</a>
-      </nav>
+  <link rel="canonical" href="https://evamariadreams.com/octi-flow.html">
+
+  <title>Octi Flow — Build a better hydration habit</title>
+
+  <meta
+    name="description"
+    content="Octi Flow is a simple hydration app designed to support everyday wellness habits with reminders, personalization, and a calm experience."
+  >
+
+  <link
+    rel="icon"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ccircle cx='50' cy='50' r='45' fill='%23015cc6'/%3E%3C/svg%3E"
+  >
+
+  <link rel="stylesheet" href="./assets/css/site.css">
+</head>
+
+<body>
+  <nav aria-label="Primary navigation">
+    <div class="container nav-inner">
+      <a class="brand" href="./octi-flow.html" aria-label="Octi Flow home">
+        <img
+          class="brand-logo"
+          src="./assets/img/octi-flow-logo.png"
+          alt="Octi Flow"
+          width="500"
+          height="216"
+          decoding="async"
+        >
+      </a>
+
+      <a class="studio-link" href="./" aria-label="EvaMariaDreams home">
+        <img
+          class="studio-logo"
+          src="./assets/img/emd-logo.png"
+          alt="EvaMariaDreams"
+          width="240"
+          height="80"
+          decoding="async"
+        >
+      </a>
     </div>
-  </header>
+  </nav>
 
   <main>
-    <section class="hero">
-      <div class="container">
-        <section class="hero-panel">
-          <p class="eyebrow">Product</p>
-          <h1>Octi Flow</h1>
-          <p class="lead">
-            Octi Flow is a wellness-oriented app designed to support hydration-related routines with clarity, personalization, and a calm everyday experience.
+    <section class="product-hero">
+      <div class="container product-hero-grid">
+        <div class="product-hero-copy reveal">
+          <p class="product-kicker">A daily hydration companion</p>
+
+          <h1>Stay in flow.</h1>
+
+          <p class="product-lead">
+            Octi Flow is a simple, friendly app that helps you build a more
+            consistent hydration routine, one moment at a time.
           </p>
 
-          <div class="hero-actions">
-            <a class="button button-primary" href="support.html">Get Support</a>
-            <a class="button button-secondary" href="faq.html">Read FAQ</a>
+          <div class="product-actions">
+            <a class="product-button product-button-primary" href="./support.html">
+              Get support
+            </a>
+
+            <a class="product-button product-button-secondary" href="./faq.html">
+              Explore FAQ
+            </a>
           </div>
 
-          <div class="store-row" aria-label="Store availability">
-            <div class="store-badge">App Store link coming soon</div>
-            <div class="store-badge">Google Play link coming soon</div>
-          </div>
-
-          <p class="hero-note">
-            Octi Flow is intended for general wellness and informational use only. Some features may be available through optional premium access.
+          <p class="product-note">
+            Octi Flow is designed for general wellness and informational use.
+            It does not provide medical advice.
           </p>
-        </section>
+        </div>
+
+        <div class="product-hero-visual reveal" aria-hidden="true">
+          <div class="flow-orbit flow-orbit-one"></div>
+          <div class="flow-orbit flow-orbit-two"></div>
+
+          <div class="flow-phone">
+            <div class="flow-phone-speaker"></div>
+
+            <div class="flow-phone-screen">
+              <div class="flow-screen-top">
+                <span>Today</span>
+                <span>•••</span>
+              </div>
+
+              <div class="flow-drop">
+                <div class="flow-drop-inner"></div>
+              </div>
+
+              <strong>Keep your flow going</strong>
+
+              <span class="flow-screen-copy">
+                A small reminder can make a daily habit feel easier.
+              </span>
+
+              <div class="flow-progress">
+                <span></span>
+              </div>
+
+              <div class="flow-screen-bottom">
+                <span>Hydration</span>
+                <span>Daily goal</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="container">
-        <section class="section-panel">
-          <h2>What the app is for</h2>
+    <section class="product-section">
+      <div class="container reveal">
+        <div class="product-section-heading">
+          <p class="product-kicker">Made for everyday use</p>
+          <h2>A lighter way to support a healthy routine.</h2>
+
           <p>
-            Octi Flow is built for users who want a lighter and more consistent way to support hydration-related habits. The app focuses on everyday usability, visual calm, and simple interaction patterns rather than dense tracking workflows.
+            Octi Flow keeps the experience focused and approachable, so your
+            routine feels easier to return to each day.
           </p>
+        </div>
 
-          <div class="grid-3">
-            <article class="card">
-              <h3>Routine support</h3>
-              <p>Designed to help users stay more consistent with hydration-related habits and reminders.</p>
-            </article>
+        <div class="product-feature-grid">
+          <article class="product-feature-card">
+            <div class="product-feature-number">01</div>
+            <h3>Gentle reminders</h3>
+            <p>
+              Helpful reminders support consistency without turning your day
+              into a complicated tracking task.
+            </p>
+          </article>
 
-            <article class="card">
-              <h3>Personalization</h3>
-              <p>Includes app settings and experience adjustments that make the product feel more individual.</p>
-            </article>
+          <article class="product-feature-card">
+            <div class="product-feature-number">02</div>
+            <h3>Personal to you</h3>
+            <p>
+              Adjust your experience with settings and preferences that fit
+              naturally into your own routine.
+            </p>
+          </article>
 
-            <article class="card">
-              <h3>Calm interface</h3>
-              <p>Built around a clean and approachable visual style that keeps the experience light and clear.</p>
-            </article>
-          </div>
-        </section>
+          <article class="product-feature-card">
+            <div class="product-feature-number">03</div>
+            <h3>Calm by design</h3>
+            <p>
+              A clear interface and a friendly companion make daily hydration
+              feel simple, positive, and easy to understand.
+            </p>
+          </article>
+        </div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="container">
-        <section class="section-panel">
-          <h2>Feature highlights</h2>
+    <section class="product-section product-section-soft">
+      <div class="container product-split reveal">
+        <div>
+          <p class="product-kicker">More ways to make it yours</p>
+
+          <h2>Built to grow with your routine.</h2>
+
           <p>
-            The product page should make it easy to understand what the app does, how it feels, and which parts of the experience are part of optional premium access.
+            Octi Flow may include optional premium features that expand the
+            experience through visual customization and additional app
+            functionality.
           </p>
 
-          <div class="grid-2">
-            <article class="card">
-              <h3>Reminders and everyday flow</h3>
-              <p>Notifications and reminder-based interactions are designed to support ongoing use and habit consistency as part of the app experience.</p>
-            </article>
+          <a class="product-text-link" href="./terms.html">
+            Read about premium features
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
 
-            <article class="card">
-              <h3>Premium options</h3>
-              <p>Optional premium access may include expanded functionality and visual customization, including themes, backgrounds, and companion variations.</p>
-            </article>
+        <div class="product-premium-card">
+          <span class="product-premium-label">Optional premium access</span>
 
-            <article class="card">
-              <h3>Local-first handling</h3>
-              <p>Information entered in the app is intended to stay on the user’s device, with local processing for reminders and personalization features.</p>
-            </article>
+          <h3>A more personal Octi Flow.</h3>
 
-            <article class="card">
-              <h3>Support and clarity</h3>
-              <p>Users can quickly access support, privacy information, terms, and common questions through the linked pages on this site.</p>
-            </article>
-          </div>
-        </section>
+          <p>
+            Explore visual themes, backgrounds, companion variations, and
+            expanded features as they become available.
+          </p>
+        </div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="container">
-        <section class="section-panel">
-          <h2>Preview area</h2>
-          <p>
-            App screenshots should visually communicate the actual experience and can later be replaced with real product imagery captured from the app interface.
-          </p>
+    <section class="product-section">
+      <div class="container reveal">
+        <div class="product-section-heading">
+          <p class="product-kicker">Everything you need</p>
 
-          <div class="screens">
-            <div class="screen">Screenshot placeholder<br>Main experience</div>
-            <div class="screen">Screenshot placeholder<br>Progress or routine view</div>
-            <div class="screen">Screenshot placeholder<br>Premium or customization view</div>
-          </div>
-        </section>
+          <h2>Clear information, whenever you need it.</h2>
+
+          <p>
+            Find answers, product support, and the policies that explain how
+            Octi Flow works.
+          </p>
+        </div>
+
+        <div class="product-links-grid">
+          <a class="product-link-card" href="./support.html">
+            <span class="product-link-label">Support</span>
+            <strong>Get help with Octi Flow</strong>
+            <span aria-hidden="true">→</span>
+          </a>
+
+          <a class="product-link-card" href="./faq.html">
+            <span class="product-link-label">FAQ</span>
+            <strong>Find quick answers</strong>
+            <span aria-hidden="true">→</span>
+          </a>
+
+          <a class="product-link-card" href="./privacy.html">
+            <span class="product-link-label">Privacy</span>
+            <strong>Read the Privacy Policy</strong>
+            <span aria-hidden="true">→</span>
+          </a>
+
+          <a class="product-link-card" href="./terms.html">
+            <span class="product-link-label">Terms</span>
+            <strong>Read the Terms of Use</strong>
+            <span aria-hidden="true">→</span>
+          </a>
+        </div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="container">
-        <section class="section-panel">
-          <h2>Helpful links</h2>
-          <p>
-            For support, privacy, terms, press information, and general questions, use the pages below.
-          </p>
-
-          <div class="inline-links">
-            <a href="support.html">Support</a>
-            <a href="faq.html">FAQ</a>
-            <a href="privacy.html">Privacy Policy</a>
-            <a href="terms.html">Terms of Use</a>
-            <a href="press-kit.html">Press Kit</a>
-            <a href="contact.html">Contact</a>
+    <section class="product-cta">
+      <div class="container reveal">
+        <div class="product-cta-card">
+          <div>
+            <p class="product-kicker">Octi Flow</p>
+            <h2>Small moments. A better flow.</h2>
           </div>
-        </section>
+
+          <a class="product-button product-button-light" href="./support.html">
+            Get support
+          </a>
+        </div>
       </div>
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="container">
-      <div class="footer-inner">
-        <p class="footer-note">
-          EvaMariaDreams creates thoughtful digital products, including Octi Flow.
-        </p>
+  <footer>
+    <div class="container apple-footer">
+      <div class="apple-footer-legal">
+        <span>Copyright © 2026 EvaMariaDreams. All rights reserved.</span>
 
-        <div class="footer-meta">
-          <div>Copyright © 2026 EvaMariaDreams. All rights reserved.</div>
-
-          <div class="footer-links">
-            <a href="about.html">About</a>
-            <a href="faq.html">FAQ</a>
-            <a href="press-kit.html">Press Kit</a>
-            <a href="privacy.html">Privacy Policy</a>
-            <a href="terms.html">Terms of Use</a>
-            <a href="support.html">Support</a>
-            <a href="contact.html">Contact</a>
-          </div>
+        <div class="apple-footer-links">
+          <a href="./">EvaMariaDreams</a>
+          <a href="./press-kit.html">Press Kit</a>
+          <a href="./privacy.html">Privacy Policy</a>
+          <a href="./terms.html">Terms of Use</a>
+          <a href="./support.html">Support</a>
+          <a href="./contact.html">Contact</a>
         </div>
       </div>
     </div>
   </footer>
+
+  <script src="./assets/js/site.js" defer></script>
 </body>
 </html>
