@@ -163,6 +163,7 @@ nav {
   position: sticky;
   top: 92px;
   height: max-content;
+  margin-top: 40px;
 }
 
 .toc-disclosure {
@@ -375,10 +376,11 @@ footer {
   padding: var(--s4) 0 var(--s3);
 }
 
-  .toc {
-    position: static;
-    margin-bottom: var(--s4);
-  }
+.toc {
+  position: static;
+  margin-top: 0;
+  margin-bottom: var(--s4);
+}
 
   /* Exactly 13 identical 38px rows */
   .toc-menu {
