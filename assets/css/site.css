@@ -1074,3 +1074,187 @@ footer {
     margin-top: var(--s3);
   }
 }
+/* Octi Flow: product positioning */
+
+.product-belief {
+  background: #fff;
+}
+
+.product-belief > .container {
+  display: grid;
+  grid-template-columns: minmax(0, 0.95fr) minmax(360px, 0.9fr);
+  align-items: center;
+  gap: clamp(40px, 8vw, 120px);
+}
+
+.product-belief-copy h2 {
+  max-width: 620px;
+}
+
+.product-belief-copy > p:last-child {
+  max-width: 570px;
+  margin-top: var(--s3);
+  color: var(--soft);
+  font-size: 1.04rem;
+}
+
+.product-comparison {
+  display: grid;
+  gap: var(--s2);
+}
+
+.product-comparison-card {
+  padding: var(--s3);
+  border: 1px solid #b9dce8;
+  border-radius: 22px;
+  background: linear-gradient(135deg, var(--deep), var(--blue));
+  box-shadow: 0 18px 36px -26px rgba(7, 48, 128, 0.55);
+  color: #fff;
+}
+
+.product-comparison-card > span {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.product-comparison-card strong {
+  display: block;
+  margin-top: var(--s1);
+  font-size: 1.35rem;
+  letter-spacing: -0.03em;
+}
+
+.product-comparison-card p {
+  margin-top: 6px;
+  color: rgba(255, 255, 255, 0.86);
+  font-size: 0.9rem;
+}
+
+.product-comparison-muted {
+  border-color: #dcebf1;
+  background: #f7fbfd;
+  box-shadow: none;
+  color: var(--deep);
+}
+
+.product-comparison-muted > span {
+  color: var(--soft);
+}
+
+.product-comparison-muted p {
+  color: var(--soft);
+}
+
+/* Octi companion card */
+
+.product-octi-card {
+  position: relative;
+  display: flex;
+  min-height: 380px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+  padding: var(--s4);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 50% 34%, rgba(255, 255, 255, 0.55), transparent 24%),
+    linear-gradient(145deg, #d8f4fb, #78bae8);
+  color: var(--deep);
+  text-align: center;
+}
+
+.product-octi-bubble {
+  position: absolute;
+  top: 34px;
+  left: 50%;
+  width: max-content;
+  max-width: calc(100% - 48px);
+  padding: 12px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 12px 24px -18px rgba(7, 48, 128, 0.42);
+  color: var(--deep);
+  font-size: 0.84rem;
+  font-weight: 700;
+  line-height: 1.35;
+  transform: translateX(-50%);
+}
+
+.product-octi-mark {
+  position: relative;
+  width: 172px;
+  height: 154px;
+  margin-bottom: 26px;
+  border-radius: 48% 52% 45% 55% / 44% 42% 58% 56%;
+  background:
+    radial-gradient(circle at 35% 30%, rgba(255, 255, 255, 0.58), transparent 14%),
+    linear-gradient(145deg, #f2a046, #d96638);
+  box-shadow:
+    inset -18px -16px 30px rgba(144, 42, 45, 0.2),
+    0 24px 32px -24px rgba(7, 48, 128, 0.55);
+}
+
+.product-octi-mark::before,
+.product-octi-mark::after {
+  position: absolute;
+  top: 52px;
+  width: 17px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--deep);
+  content: "";
+}
+
+.product-octi-mark::before {
+  left: 53px;
+}
+
+.product-octi-mark::after {
+  right: 53px;
+}
+
+.product-octi-mark span {
+  position: absolute;
+  bottom: -28px;
+  width: 74px;
+  height: 52px;
+  border-radius: 50%;
+  background: #e47b3e;
+  z-index: -1;
+}
+
+.product-octi-mark span:nth-child(1) {
+  left: -26px;
+  transform: rotate(-28deg);
+}
+
+.product-octi-mark span:nth-child(2) {
+  left: 49px;
+  bottom: -38px;
+}
+
+.product-octi-mark span:nth-child(3) {
+  right: -26px;
+  transform: rotate(28deg);
+}
+
+.product-octi-card > strong {
+  position: relative;
+  z-index: 1;
+  font-size: 1.12rem;
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 820px) {
+  .product-belief > .container {
+    grid-template-columns: 1fr;
+  }
+
+  .product-octi-card {
+    min-height: 330px;
+  }
+}
