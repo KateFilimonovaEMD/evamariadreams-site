@@ -239,6 +239,27 @@ nav {
   color: var(--soft);
   font-size: 0.78rem;
   line-height: 1.25;
+  transition:
+    background-color 0.18s ease,
+    color 0.18s ease,
+    padding-left 0.18s ease;
+}
+
+.toc-menu a:hover {
+  padding-left: 20px;
+  background: #f1f9fc;
+  color: var(--deep);
+}
+
+.toc-menu a:active {
+  background: #e4f3f9;
+  color: var(--blue);
+}
+
+.toc-menu a:focus-visible {
+  position: relative;
+  z-index: 1;
+  outline-offset: -3px;
 }
 
 .toc-menu a:last-child {
