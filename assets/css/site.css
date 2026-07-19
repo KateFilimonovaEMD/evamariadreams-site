@@ -87,13 +87,13 @@ nav {
 .studio-link {
   display: inline-flex;
   align-items: center;
-  height: 36px;
+  height: 46px;
 }
 
 .studio-logo {
   display: block;
   width: auto;
-  height: 28px;
+  height: 46px;
   max-width: 150px;
   object-fit: contain;
 }
@@ -379,7 +379,7 @@ footer {
   }
   
   .studio-logo {
-  height: 22px;
+  height: 36px;
   max-width: 118px;
   }
 
