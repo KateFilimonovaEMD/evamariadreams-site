@@ -179,6 +179,22 @@
     .subhead { font-size: 14px; color: var(--ash); margin: 4px 0 0; }
     .hint { font-size: 13px; color: var(--ash-2); margin-top: 8px; }
 
+    /* Apps overview */
+    .apps { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; margin-top: 14px; }
+    .app-card { text-align: left; color: var(--white); cursor: pointer; padding: 18px 18px 16px; border-radius: 20px; border: 0;
+      background: rgba(255, 247, 238, 0.035); box-shadow: inset 0 0 0 1px rgba(255, 247, 238, 0.07), inset 0 1px 0 rgba(255,247,238,.06);
+      transition: transform .45s var(--spring), background .25s ease; }
+    .app-card:hover { background: rgba(255, 247, 238, 0.07); transform: translateY(-2px); }
+    .app-card-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+    .app-card-name { font-family: var(--display); font-weight: 700; font-size: 17px; font-variation-settings: var(--wide); }
+    .app-card-live { font-size: 12px; color: var(--ash); display: inline-flex; align-items: center; gap: 6px; }
+    .app-card-live::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--c, var(--ash-2)); }
+    .app-card-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+    .app-card-stats span { display: block; font-size: 12px; color: var(--ash); }
+    .app-card-stats b { font-family: var(--display); font-size: 19px; font-variant-numeric: tabular-nums; }
+    .app-card-foot { margin-top: 12px; font-size: 13px; color: var(--ash); display: flex; justify-content: space-between; gap: 8px; }
+    .combined-note { display: inline-block; margin-left: 8px; font-size: 12px; font-weight: 500; color: var(--amber); font-family: var(--text); letter-spacing: 0; vertical-align: middle; }
+
     /* Health checks */
     .checks { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
     .check { display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 14px; padding: 13px 16px; border-radius: 16px; background: rgba(255, 247, 238, 0.035); box-shadow: inset 0 1px 0 rgba(255,247,238,.06); transition: transform .45s var(--spring), background .25s ease; }
@@ -346,6 +362,14 @@
         <div class="kpi"><div class="kpi-label">Frame time p95</div><div class="kpi-value num" id="kP95">–</div><div class="kpi-sub">95% of frames are faster</div></div>
       </section>
 
+      <section class="grid" id="appsSection" hidden>
+        <article class="panel glass">
+          <h2>Apps</h2>
+          <p class="note" style="margin-bottom:0">Every app with OctiMonitor reports into the same backend. Pick one to see its own materials, phones and builds.</p>
+          <div class="apps" id="apps"></div>
+        </article>
+      </section>
+
       <section class="grid">
         <article class="panel glass" id="pChecks">
           <div class="panel-head">
@@ -379,7 +403,7 @@
 
       <section class="grid split" id="pMaterials">
         <article class="panel glass">
-          <h2>GPU cost per material</h2>
+          <h2>GPU cost per material<span class="combined-note" data-combined hidden>all apps combined</span></h2>
           <p class="note">How long the GPU works on one frame of each material, p95. Click a bar to inspect it.</p>
           <div class="chart" id="cScenes" role="img" aria-label="Bar chart of GPU time per material"></div>
           <details><summary>Show as table</summary><div class="table-wrap"><table id="scenesTable"></table></div></details>
@@ -392,7 +416,7 @@
 
       <section class="grid">
         <article class="panel glass" id="pHeatmap">
-          <h2>Material × device</h2>
+          <h2>Material × device<span class="combined-note" data-combined hidden>all apps combined</span></h2>
           <p class="note">GPU time p95 in milliseconds for each material on each phone model seen. Click a cell, a material or a phone to inspect it.</p>
           <div class="chart" id="cHeat" role="img" aria-label="Heatmap of GPU time by material and device"></div>
         </article>
@@ -476,10 +500,18 @@
       "iPhone14,6": "iPhone SE 3", "iPhone14,7": "iPhone 14", "iPhone14,8": "iPhone 14 Plus",
       "iPhone15,2": "iPhone 14 Pro", "iPhone15,3": "iPhone 14 Pro Max", "iPhone15,4": "iPhone 15", "iPhone15,5": "iPhone 15 Plus",
       "iPhone16,1": "iPhone 15 Pro", "iPhone16,2": "iPhone 15 Pro Max",
-      "iPhone17,1": "iPhone 16 Pro", "iPhone17,2": "iPhone 16 Pro Max", "iPhone17,3": "iPhone 16", "iPhone17,4": "iPhone 16 Plus", "iPhone17,5": "iPhone 16e"
+      "iPhone17,1": "iPhone 16 Pro", "iPhone17,2": "iPhone 16 Pro Max", "iPhone17,3": "iPhone 16", "iPhone17,4": "iPhone 16 Plus", "iPhone17,5": "iPhone 16e",
+      "iPad13,1": "iPad Air 4", "iPad13,2": "iPad Air 4", "iPad13,16": "iPad Air 5", "iPad13,17": "iPad Air 5",
+      "iPad13,4": "iPad Pro 11 (3rd gen)", "iPad13,5": "iPad Pro 11 (3rd gen)", "iPad13,6": "iPad Pro 11 (3rd gen)", "iPad13,7": "iPad Pro 11 (3rd gen)",
+      "iPad13,8": "iPad Pro 12.9 (5th gen)", "iPad13,9": "iPad Pro 12.9 (5th gen)", "iPad13,10": "iPad Pro 12.9 (5th gen)", "iPad13,11": "iPad Pro 12.9 (5th gen)",
+      "iPad13,18": "iPad (10th gen)", "iPad13,19": "iPad (10th gen)", "iPad14,1": "iPad mini 6", "iPad14,2": "iPad mini 6",
+      "iPad14,3": "iPad Pro 11 (4th gen)", "iPad14,4": "iPad Pro 11 (4th gen)", "iPad14,5": "iPad Pro 12.9 (6th gen)", "iPad14,6": "iPad Pro 12.9 (6th gen)",
+      "iPad14,8": "iPad Air 11 (M2)", "iPad14,9": "iPad Air 11 (M2)", "iPad14,10": "iPad Air 13 (M2)", "iPad14,11": "iPad Air 13 (M2)",
+      "iPad16,3": "iPad Pro 11 (M4)", "iPad16,4": "iPad Pro 11 (M4)", "iPad16,5": "iPad Pro 13 (M4)", "iPad16,6": "iPad Pro 13 (M4)"
     };
     const deviceName = id => DEVICES[id] || id;
-    const appName = id => ({ "com.evamariadreams.opalcaress": "Opal Caress" })[id] || String(id).split(".").pop();
+    const APP_NAMES = { "com.evamariadreams.opalcaress": "Opal Caress", "com.evamariadreams.octisculpt": "Octi Sculpt", "com.evamariadreams.octiflow": "Octi Flow" };
+    const appName = id => APP_NAMES[id] || String(id).split(".").pop().replace(/[-_]/g, " ").replace(/^octi/i, "Octi ").replace(/\b\w/g, c => c.toUpperCase()).trim();
     const METRICS = {
       frame_p95: { label: "Frame p95", unit: "ms", digits: 1, note: "p95 frame time across every session. The dashed line is the 60 fps budget of 16.7 ms: above it, players start to feel stutter.", ref: [{ y: BUDGET_MS, label: "60 fps budget" }] },
       fps: { label: "FPS", unit: "fps", digits: 1, note: "Average frame rate across every session. The dashed line is the 60 fps target.", ref: [{ y: 60, label: "60 fps target" }] },
@@ -589,6 +621,36 @@
       return res.json();
     }
 
+    async function loadApp(app) {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/octimonitor_overview`, {
+        method: "POST", headers: { "apikey": PUBLIC_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_hours: state.hours, p_app: app })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}.`);
+      return res.json();
+    }
+
+    async function renderApps(d) {
+      const apps = d.apps || [];
+      const show = !state.app && apps.length > 1;
+      $("appsSection").hidden = !show;
+      document.querySelectorAll("[data-combined]").forEach(el => el.hidden = !show);
+      if (!show) return;
+      const per = await Promise.all(apps.map(a => loadApp(a).then(x => [a, x]).catch(() => [a, null])));
+      $("apps").innerHTML = per.map(([a, x]) => {
+        const t = (x && x.totals) || {}, o = (x && x.overall) || {}, v = verdict(o.hitch);
+        const live = t.live_sessions > 0;
+        return `<button type="button" class="app-card" data-app="${esc(a)}">
+          <div class="app-card-head"><span class="app-card-name">${esc(appName(a))}</span><span class="app-card-live" style="--c:${live ? EMBER : ASH2}">${live ? `${int(t.live_sessions)} playing` : "Idle"}</span></div>
+          <div class="app-card-stats"><div><span>FPS</span><b>${fmt(o.fps)}</b></div><div><span>Frame p95</span><b>${fmt(o.frame_p95)}</b></div><div><span>Hitch ms/s</span><b>${fmt(o.hitch)}</b></div></div>
+          <div class="app-card-foot"><span>${int(t.sessions || 0)} session${t.sessions === 1 ? "" : "s"} on ${int(t.devices || 0)} device${t.devices === 1 ? "" : "s"}</span>${(t.reports || 0) > 0 ? heatTag(v[0], v[1]) : `<span class="muted">No data in range</span>`}</div>
+        </button>`;
+      }).join("");
+      $("apps").querySelectorAll(".app-card").forEach(b => b.addEventListener("click", () => {
+        state.app = b.dataset.app; state.sel = { scene: null, device: null }; syncUrl(); refresh(); scrollTo({ top: 0 });
+      }));
+    }
+
     async function refresh(manual) {
       try {
         state.data = await load();
@@ -638,6 +700,7 @@
       tween($("kFps"), o.fps, 1);
       tween($("kP95"), o.frame_p95, 1, "<small>ms</small>");
 
+      renderApps(d).catch(() => {});
       renderChecks(d);
       renderTimeline();
       renderScenes();
