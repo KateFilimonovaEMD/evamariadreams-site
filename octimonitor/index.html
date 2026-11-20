@@ -49,14 +49,15 @@
     button { font: inherit; }
 
     /* Ambient light under the glass */
-    .ambient { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; }
-    .ambient i { position: absolute; border-radius: 50%; filter: blur(90px); opacity: .55; will-change: transform; }
-    .ambient i:nth-child(1) { width: 52vw; height: 52vw; left: 52%; top: -18vw; background: radial-gradient(circle, #ff5a1f, rgba(255,90,31,0) 70%); animation: drift1 28s ease-in-out infinite alternate; }
-    .ambient i:nth-child(2) { width: 40vw; height: 40vw; left: -12vw; top: 30vh; background: radial-gradient(circle, #ffb020, rgba(255,176,32,0) 70%); opacity: .28; animation: drift2 34s ease-in-out infinite alternate; }
-    .ambient i:nth-child(3) { width: 46vw; height: 46vw; left: 40%; top: 120vh; background: radial-gradient(circle, #ff3d00, rgba(255,61,0,0) 70%); opacity: .3; animation: drift3 40s ease-in-out infinite alternate; }
-    @keyframes drift1 { to { transform: translate(-14vw, 12vh) scale(1.12); } }
-    @keyframes drift2 { to { transform: translate(18vw, -8vh) scale(.9); } }
-    @keyframes drift3 { to { transform: translate(-20vw, -30vh) scale(1.1); } }
+    .ambient { position: fixed; inset: 0; z-index: -1; overflow: hidden; pointer-events: none; contain: strict; }
+    /* Soft light made of gradients alone: no filter blur, so nothing gets clipped into a hard box at the window edge */
+    .ambient i { position: absolute; border-radius: 50%; will-change: transform; }
+    .ambient i:nth-child(1) { width: 90vmax; height: 90vmax; left: 30%; top: -55vmax; background: radial-gradient(closest-side, rgba(255,90,31,.42), rgba(255,90,31,.16) 45%, rgba(255,90,31,0)); animation: drift1 28s ease-in-out infinite alternate; }
+    .ambient i:nth-child(2) { width: 70vmax; height: 70vmax; left: -35vmax; top: 10vh; background: radial-gradient(closest-side, rgba(255,176,32,.16), rgba(255,176,32,.06) 50%, rgba(255,176,32,0)); animation: drift2 34s ease-in-out infinite alternate; }
+    .ambient i:nth-child(3) { width: 80vmax; height: 80vmax; right: -40vmax; bottom: -45vmax; background: radial-gradient(closest-side, rgba(255,61,0,.18), rgba(255,61,0,.06) 50%, rgba(255,61,0,0)); animation: drift3 40s ease-in-out infinite alternate; }
+    @keyframes drift1 { to { transform: translate(-12vw, 6vh); } }
+    @keyframes drift2 { to { transform: translate(10vw, -6vh); } }
+    @keyframes drift3 { to { transform: translate(-10vw, -6vh); } }
     @media (prefers-reduced-motion: reduce) { .ambient i { animation: none; } }
 
     /* Liquid-glass material: translucent fill, blur of what's behind, a lit top edge and a gradient rim */
