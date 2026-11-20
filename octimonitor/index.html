@@ -14,11 +14,13 @@
     :root {
       --black: #000000;
       --coal: #12100e;
+      --coal-2: #1a1714;
       --line: #2b2622;
       --ash: #9a928a;
       --ash-2: #6f6862;
       --white: #fff7ee;
       --ember: #ff5a1f;
+      --fire: #ff3d00;
       --amber: #ffb020;
       --heat: linear-gradient(90deg, #ff3d00 0%, #ff5a1f 35%, #ffb020 75%, #fff1d6 100%);
       --radius: 22px;
@@ -26,6 +28,8 @@
     }
     * { box-sizing: border-box; }
     html, body { margin: 0; background: var(--black); color: var(--white); }
+    html { scroll-behavior: smooth; scroll-padding-top: 24px; }
+    @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
     body {
       font-family: "Archivo", system-ui, sans-serif;
       font-size: 16px; line-height: 1.55;
@@ -37,22 +41,26 @@
       background-repeat: no-repeat;
     }
     a { color: inherit; }
+    button { font: inherit; }
     :focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 6px; }
     .wrap { width: min(1200px, calc(100% - 48px)); margin: 0 auto; }
     .num { font-variant-numeric: tabular-nums; }
 
-    .bar { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 22px 0; }
+    .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 0; flex-wrap: wrap; }
     .mark { display: flex; align-items: center; gap: 12px; font-weight: 700; font-size: 17px; letter-spacing: -0.01em; font-variation-settings: var(--wide); }
     .mark-glyph { width: 28px; height: 28px; border-radius: 9px; background: var(--heat); position: relative; }
     .mark-glyph::after { content: ""; position: absolute; inset: 7px; border-radius: 4px; background: var(--black); }
+    .bar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .live { display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px 8px 12px; border: 1px solid var(--line); border-radius: 999px; font-size: 14px; color: var(--ash); background: rgba(18, 16, 14, 0.7); }
     .live b { color: var(--white); font-weight: 600; }
     .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ash-2); }
     .live.on .dot { background: var(--ember); box-shadow: 0 0 0 0 rgba(255, 90, 31, 0.6); animation: pulse 1.8s infinite; }
     @keyframes pulse { 70% { box-shadow: 0 0 0 9px rgba(255, 90, 31, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 90, 31, 0); } }
-    @media (prefers-reduced-motion: reduce) { .live.on .dot { animation: none; } .gauge-pin { transition: none; } }
+    .ghost { border: 1px solid var(--line); background: rgba(18, 16, 14, 0.7); color: var(--white); border-radius: 999px; padding: 8px 14px; font-size: 14px; cursor: pointer; }
+    .ghost:hover { border-color: var(--ash-2); }
+    .ghost[disabled] { opacity: .5; cursor: default; }
 
-    .hero { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 48px; align-items: end; padding: 64px 0 40px; }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 48px; align-items: end; padding: 56px 0 36px; }
     h1 {
       margin: 0; font-weight: 800; font-variation-settings: var(--wide);
       font-size: clamp(40px, 6.2vw, 84px); line-height: 0.96; letter-spacing: -0.035em;
@@ -61,18 +69,19 @@
       max-width: 13ch;
     }
     .intro { margin: 24px 0 0; color: var(--ash); font-size: 18px; max-width: 52ch; }
-    .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 32px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
     .select, .seg button {
-      font: inherit; font-size: 14px; font-weight: 500; color: var(--white);
+      font-size: 14px; font-weight: 500; color: var(--white);
       background: var(--coal); border: 1px solid var(--line); border-radius: 999px; padding: 9px 16px; cursor: pointer;
     }
-    .select { appearance: none; -webkit-appearance: none; padding-right: 36px;
+    .select { appearance: none; -webkit-appearance: none; padding-right: 36px; font: inherit; font-size: 14px;
       background-image: linear-gradient(45deg, transparent 50%, var(--ash) 50%), linear-gradient(135deg, var(--ash) 50%, transparent 50%);
       background-position: calc(100% - 18px) 52%, calc(100% - 13px) 52%; background-size: 5px 5px; background-repeat: no-repeat; }
     .select option { background: var(--coal); color: var(--white); }
     .seg { display: inline-flex; padding: 3px; gap: 2px; background: var(--coal); border: 1px solid var(--line); border-radius: 999px; }
     .seg button { border: 0; background: transparent; padding: 7px 14px; color: var(--ash); white-space: nowrap; }
     .seg button[aria-pressed="true"] { background: var(--heat); color: #1a0a02; font-weight: 700; }
+    .seg.small button { padding: 5px 12px; font-size: 13px; }
 
     .gauge { border-radius: var(--radius); padding: 28px; background: linear-gradient(160deg, rgba(255, 90, 31, 0.18), rgba(18, 16, 14, 0.92) 55%); border: 1px solid rgba(255, 90, 31, 0.35); }
     .gauge-label { color: var(--ash); font-size: 14px; }
@@ -81,6 +90,7 @@
     .gauge-value span { font-size: 18px; color: var(--ash); font-weight: 600; }
     .gauge-track { position: relative; height: 10px; margin-top: 22px; border-radius: 999px; background: linear-gradient(90deg, #fff1d6 0%, #ffb020 30%, #ff5a1f 60%, #ff2a00 100%); }
     .gauge-pin { position: absolute; top: 50%; width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: var(--white); border: 4px solid var(--black); box-shadow: 0 0 0 1px var(--white); left: 0; transition: left .6s ease; }
+    @media (prefers-reduced-motion: reduce) { .gauge-pin { transition: none; } .live.on .dot { animation: none; } }
     .gauge-scale { display: flex; justify-content: space-between; margin-top: 10px; font-size: 12px; color: var(--ash-2); }
     .gauge-verdict { margin-top: 18px; font-size: 15px; color: var(--ash); }
 
@@ -93,20 +103,63 @@
     .kpi-sub { font-size: 13px; color: var(--ash-2); margin-top: 2px; }
 
     .grid { display: grid; gap: 20px; margin-top: 20px; }
-    .grid.two { grid-template-columns: 1fr 1fr; }
+    .grid.split { grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); align-items: start; }
     .panel { border: 1px solid var(--line); border-radius: var(--radius); background: rgba(18, 16, 14, 0.75); padding: 26px 28px 22px; min-width: 0; }
+    .panel-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-wrap: wrap; }
     .panel h2 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.015em; font-variation-settings: var(--wide); }
     .panel p.note { margin: 6px 0 14px; color: var(--ash); font-size: 14px; max-width: 70ch; }
     .chart { width: 100%; height: 300px; }
     .chart.short { height: 220px; }
     .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
     .subhead { font-size: 14px; color: var(--ash); margin: 4px 0 0; }
+    .hint { font-size: 13px; color: var(--ash-2); margin-top: 8px; }
+
+    /* Health checks */
+    .checks { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
+    .check { display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 14px; padding: 12px 14px; border: 1px solid var(--line); border-radius: 14px; background: rgba(0,0,0,0.35); }
+    .check.clickable { cursor: pointer; }
+    .check.clickable:hover { border-color: var(--ash-2); }
+    .sev { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; }
+    .sev::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); }
+    .check-title { font-weight: 600; }
+    .check-detail { color: var(--ash); font-size: 14px; }
+    .check-go { color: var(--ash-2); font-size: 13px; white-space: nowrap; }
+
+    /* Inspector */
+    .inspector { position: sticky; top: 16px; }
+    .inspector .empty { color: var(--ash); font-size: 15px; margin-top: 10px; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+    .chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 8px 6px 12px; border-radius: 999px; background: var(--coal-2); border: 1px solid var(--line); font-size: 13px; font-weight: 600; }
+    .chip button { border: 0; background: transparent; color: var(--ash); cursor: pointer; padding: 0 4px; font-size: 15px; line-height: 1; }
+    .chip button:hover { color: var(--white); }
+    .mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 16px; background: var(--line); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+    .mini div { background: var(--coal); padding: 12px 14px; }
+    .mini span { display: block; font-size: 12px; color: var(--ash); }
+    .mini b { font-size: 20px; font-variation-settings: var(--wide); font-variant-numeric: tabular-nums; }
+    .budget { margin-top: 16px; }
+    .budget-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--ash); }
+    .budget-track { height: 8px; margin-top: 6px; border-radius: 999px; background: var(--coal-2); overflow: hidden; }
+    .budget-fill { height: 100%; border-radius: inherit; background: var(--heat); }
+    .rows { margin-top: 18px; display: grid; gap: 10px; }
+    .rows h3 { margin: 0; font-size: 14px; font-weight: 600; color: var(--ash); }
+    .rowbar { display: grid; grid-template-columns: 120px 1fr 64px; gap: 10px; align-items: center; font-size: 14px; cursor: pointer; border-radius: 8px; padding: 2px 0; }
+    .rowbar:hover .rowbar-name { color: var(--amber); }
+    .rowbar-track { height: 8px; border-radius: 999px; background: var(--coal-2); overflow: hidden; }
+    .rowbar-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #ff3d00, #ff5a1f, #ffb020); }
+    .rowbar-val { text-align: right; font-variant-numeric: tabular-nums; color: var(--white); }
+    .rowbar-name { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
     table { width: 100%; border-collapse: collapse; font-size: 14px; }
     th { text-align: left; font-weight: 500; color: var(--ash-2); font-size: 12.5px; padding: 10px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
     td { padding: 11px 12px; border-bottom: 1px solid rgba(43, 38, 34, 0.6); white-space: nowrap; font-variant-numeric: tabular-nums; }
     tr:last-child td { border-bottom: 0; }
     td.r, th.r { text-align: right; }
+    tr.pick { cursor: pointer; }
+    tr.pick:hover td { background: rgba(255,255,255,0.025); }
+    tr.selected td { background: rgba(255, 90, 31, 0.10); }
+    tr.fresh td { animation: fresh 2.4s ease-out; }
+    @keyframes fresh { from { background: rgba(255, 176, 32, 0.22); } to { background: transparent; } }
+    @media (prefers-reduced-motion: reduce) { tr.fresh td { animation: none; } }
     .muted { color: var(--ash-2); }
     .table-wrap { overflow-x: auto; margin: 4px -12px 0; }
     details { margin-top: 10px; }
@@ -114,6 +167,11 @@
 
     .heat { display: inline-flex; align-items: center; gap: 7px; font-weight: 600; color: var(--white); }
     .heat::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--ash-2)); }
+    .delta { font-weight: 700; }
+    .delta.better { color: var(--white); }
+    .delta.worse { color: var(--ember); }
+    .delta.same { color: var(--ash); }
+    .compare-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; color: var(--ash); font-size: 14px; }
 
     .notice { border: 1px solid var(--line); border-radius: var(--radius); padding: 22px 26px; background: rgba(18, 16, 14, 0.75); color: var(--ash); margin-top: 20px; }
     .notice b { color: var(--white); }
@@ -126,20 +184,25 @@
     .stage b { display: block; font-size: 15px; font-variation-settings: var(--wide); margin-bottom: 6px; }
     .stage span { display: block; color: var(--ash); font-size: 14px; line-height: 1.5; }
 
+    .toast { position: fixed; left: 50%; bottom: 24px; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; background: var(--white); color: #1a0a02; font-weight: 600; font-size: 14px; padding: 10px 16px; border-radius: 999px; transition: opacity .2s, transform .2s; }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
     footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 40px 0 48px; color: var(--ash-2); font-size: 13px; }
     footer a { color: var(--ash); text-decoration: none; border-bottom: 1px solid var(--line); }
     footer a:hover { color: var(--white); }
+    kbd { font: inherit; font-size: 12px; padding: 1px 6px; border: 1px solid var(--line); border-radius: 6px; color: var(--ash); }
 
     [hidden] { display: none !important; }
 
     @media (max-width: 980px) {
-      .hero { grid-template-columns: 1fr; gap: 32px; padding-top: 40px; }
+      .hero { grid-template-columns: 1fr; gap: 32px; padding-top: 36px; }
       .strip { grid-template-columns: repeat(2, 1fr); }
       .kpi { border-left: 0; border-top: 1px solid var(--line); }
       .kpi:nth-child(-n+2) { border-top: 0; }
       .kpi:nth-child(even) { border-left: 1px solid var(--line); }
       .kpi:last-child { grid-column: 1 / -1; border-left: 0; }
-      .grid.two, .pipe, .pair { grid-template-columns: 1fr; }
+      .grid.split, .pipe, .pair { grid-template-columns: 1fr; }
+      .inspector { position: static; }
       .stage { border-left: 0; border-top: 1px solid var(--line); }
       .stage:first-child { border-top: 0; }
     }
@@ -147,8 +210,10 @@
       .wrap { width: calc(100% - 28px); }
       .panel { padding: 22px 18px 16px; }
       .gauge { padding: 22px; }
-      .bar { flex-wrap: wrap; }
       .kpi-value { font-size: 28px; }
+      .check { grid-template-columns: 1fr; gap: 4px; }
+      .check-go { display: none; }
+      .rowbar { grid-template-columns: 96px 1fr 56px; }
     }
   </style>
 </head>
@@ -156,7 +221,11 @@
   <div class="wrap">
     <header class="bar">
       <span class="mark"><span class="mark-glyph" aria-hidden="true"></span>OctiMonitor</span>
-      <span class="live" id="live"><span class="dot" aria-hidden="true"></span><b id="liveText">Connecting</b><span id="updated" aria-live="polite"></span></span>
+      <div class="bar-right">
+        <button class="ghost" id="share" type="button">Copy link to this view</button>
+        <button class="ghost" id="export" type="button" disabled>Export CSV</button>
+        <span class="live" id="live"><span class="dot" aria-hidden="true"></span><b id="liveText">Connecting</b><span id="updated" aria-live="polite"></span></span>
+      </div>
     </header>
 
     <section class="hero">
@@ -196,24 +265,59 @@
       </section>
 
       <section class="grid">
-        <article class="panel">
-          <h2>Frame time</h2>
-          <p class="note">p95 frame time across every session. The dashed line is the 60&nbsp;fps budget of 16.7&nbsp;ms: above it, players start to feel stutter.</p>
-          <div class="chart" id="cTimeline" role="img" aria-label="Line chart of p95 frame time over time"></div>
+        <article class="panel" id="pChecks">
+          <div class="panel-head">
+            <div>
+              <h2>Health checks</h2>
+              <p class="note" style="margin-bottom:0">Rules run on every refresh against the frame budget, heat and the previous build. Click a finding to inspect it.</p>
+            </div>
+            <span id="checkSummary" class="sev" style="--c:var(--ash-2)">Checking</span>
+          </div>
+          <ul class="checks" id="checks"></ul>
         </article>
       </section>
 
       <section class="grid">
+        <article class="panel" id="pTimeline">
+          <div class="panel-head">
+            <div>
+              <h2>Over time</h2>
+              <p class="note" id="timelineNote">p95 frame time across every session.</p>
+            </div>
+            <div class="seg small" role="group" aria-label="Metric" id="metric">
+              <button type="button" data-metric="frame_p95" aria-pressed="true">Frame p95</button>
+              <button type="button" data-metric="fps" aria-pressed="false">FPS</button>
+              <button type="button" data-metric="hitch" aria-pressed="false">Hitches</button>
+            </div>
+          </div>
+          <div class="chart" id="cTimeline" role="img" aria-label="Line chart of the selected metric over time"></div>
+          <div class="hint">Scroll or pinch on the chart to zoom, drag to pan.</div>
+        </article>
+      </section>
+
+      <section class="grid split" id="pMaterials">
         <article class="panel">
           <h2>GPU cost per material</h2>
-          <p class="note">How long the GPU works on one frame of each material, p95. Shader cost shows up here first.</p>
+          <p class="note">How long the GPU works on one frame of each material, p95. Click a bar to inspect it.</p>
           <div class="chart" id="cScenes" role="img" aria-label="Bar chart of GPU time per material"></div>
           <details><summary>Show as table</summary><div class="table-wrap"><table id="scenesTable"></table></div></details>
         </article>
+        <aside class="panel inspector" id="inspector" aria-live="polite">
+          <h2>Inspector</h2>
+          <div id="inspectorBody"><p class="empty">Select a material or a phone in any chart or table to see its breakdown here.</p></div>
+        </aside>
       </section>
 
       <section class="grid">
-        <article class="panel">
+        <article class="panel" id="pHeatmap">
+          <h2>Material × device</h2>
+          <p class="note">GPU time p95 in milliseconds for each material on each phone model seen. Click a cell, a material or a phone to inspect it.</p>
+          <div class="chart" id="cHeat" role="img" aria-label="Heatmap of GPU time by material and device"></div>
+        </article>
+      </section>
+
+      <section class="grid">
+        <article class="panel" id="pHeat">
           <h2>Heat over a session</h2>
           <p class="note">Sessions lined up from their first minute. Stutter rising together with the share of hot phones means thermal throttling.</p>
           <div class="pair">
@@ -224,25 +328,27 @@
       </section>
 
       <section class="grid">
-        <article class="panel">
-          <h2>Material × device</h2>
-          <p class="note">GPU time p95 in milliseconds for each material on each phone model seen. The hotter the cell, the heavier the work.</p>
-          <div class="chart" id="cHeat" role="img" aria-label="Heatmap of GPU time by material and device"></div>
-        </article>
-      </section>
-
-      <section class="grid">
-        <article class="panel">
-          <h2>By app version</h2>
-          <p class="note">Each build next to the last, so a regression or a win shows the day it ships.</p>
-          <div class="table-wrap"><table id="versionsTable"></table></div>
+        <article class="panel" id="pCompare">
+          <div class="panel-head">
+            <div>
+              <h2>Build comparison</h2>
+              <p class="note">Pick a baseline and a candidate build to see what changed.</p>
+            </div>
+            <div class="compare-controls">
+              <select class="select" id="baseline" aria-label="Baseline build"></select>
+              <span>vs</span>
+              <select class="select" id="candidate" aria-label="Candidate build"></select>
+            </div>
+          </div>
+          <div class="table-wrap"><table id="compareTable"></table></div>
+          <details><summary>All builds</summary><div class="table-wrap"><table id="versionsTable"></table></div></details>
         </article>
       </section>
 
       <section class="grid">
         <article class="panel">
           <h2>Latest reports</h2>
-          <p class="note">One row per 30-second window from a real device, with the material played most.</p>
+          <p class="note">One row per 30-second window from a real device, with the material played most. New rows light up as they arrive.</p>
           <div class="table-wrap"><table id="recentTable"></table></div>
         </article>
       </section>
@@ -263,10 +369,11 @@
     </section>
 
     <footer>
-      <span>OctiMonitor by EvaMariaDreams</span>
+      <span>OctiMonitor by EvaMariaDreams &nbsp; <kbd>R</kbd> refresh &nbsp; <kbd>Esc</kbd> clear selection</span>
       <a href="https://github.com/KateFilimonovaEMD/OctiMonitor">Source code on GitHub</a>
     </footer>
   </div>
+  <div class="toast" id="toast" role="status"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
   <script>
@@ -274,10 +381,12 @@
     const SUPABASE_URL = "https://tpkhxrcjfbclcwpjoxwm.supabase.co";
     const PUBLIC_KEY = "sb_publishable__IEtCxi9X95zoNj6t5WNXQ_k5HlwG3g";   // can insert reports and call the read-only aggregate function, nothing else
     const REFRESH_MS = 10000;
+    const BUDGET_MS = 1000 / 60;
 
-    const WHITE = "#fff7ee", ASH = "#9a928a", ASH2 = "#6f6862", LINE = "#2b2622", EMBER = "#ff5a1f", AMBER = "#ffb020";
+    const WHITE = "#fff7ee", ASH = "#9a928a", ASH2 = "#6f6862", LINE = "#2b2622", EMBER = "#ff5a1f", FIRE = "#ff3d00", AMBER = "#ffb020";
     const HEAT_RAMP = ["#2a1409", "#5c1d06", "#a3300a", "#e2470f", "#ff6a1f", "#ff9a2a", "#ffc65a", "#fff1d6"];
-    const THERMAL = { nominal: ["Cool", "#fff7ee"], fair: ["Warm", "#ffb020"], serious: ["Hot", "#ff5a1f"], critical: ["Critical", "#ff2a00"] };
+    const THERMAL = { nominal: ["Cool", WHITE], fair: ["Warm", AMBER], serious: ["Hot", EMBER], critical: ["Critical", FIRE] };
+    const SEV = { critical: ["Critical", FIRE], warning: ["Warning", AMBER], ok: ["Passing", WHITE] };
     const DEVICES = {
       "iPhone12,1": "iPhone 11", "iPhone12,3": "iPhone 11 Pro", "iPhone12,5": "iPhone 11 Pro Max", "iPhone12,8": "iPhone SE 2",
       "iPhone13,1": "iPhone 12 mini", "iPhone13,2": "iPhone 12", "iPhone13,3": "iPhone 12 Pro", "iPhone13,4": "iPhone 12 Pro Max",
@@ -289,13 +398,30 @@
     };
     const deviceName = id => DEVICES[id] || id;
     const appName = id => ({ "com.evamariadreams.opalcaress": "Opal Caress" })[id] || String(id).split(".").pop();
+    const METRICS = {
+      frame_p95: { label: "Frame p95", unit: "ms", digits: 1, note: "p95 frame time across every session. The dashed line is the 60 fps budget of 16.7 ms: above it, players start to feel stutter.", ref: [{ y: BUDGET_MS, label: "60 fps budget" }] },
+      fps: { label: "FPS", unit: "fps", digits: 1, note: "Average frame rate across every session. The dashed line is the 60 fps target.", ref: [{ y: 60, label: "60 fps target" }] },
+      hitch: { label: "Hitch time", unit: "ms/s", digits: 1, note: "Milliseconds of lateness per second of play. Under 5 is smooth, above 10 players feel stutter.", ref: [{ y: 5, label: "noticeable" }, { y: 10, label: "stutter" }] }
+    };
 
-    const state = { hours: 24, app: "", lastOk: 0, timer: null, data: null };
+    const params = new URLSearchParams(location.search);
+    const state = {
+      hours: [1, 24, 168, 720].includes(Number(params.get("h"))) ? Number(params.get("h")) : 24,
+      app: params.get("app") || "",
+      metric: METRICS[params.get("metric")] ? params.get("metric") : "frame_p95",
+      sel: { scene: params.get("scene") || null, device: params.get("device") || null },
+      compare: { base: null, cand: null },
+      lastOk: 0, timer: null, data: null, seenRecent: new Set(), firstLoad: true
+    };
+
     const $ = id => document.getElementById(id);
     const fmt = (v, d = 1) => (v === null || v === undefined || isNaN(v)) ? "–" : Number(v).toFixed(d);
     const int = v => (v === null || v === undefined) ? "–" : Number(v).toLocaleString("en-US");
     const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
     const heatTag = (label, color) => `<span class="heat" style="--c:${color}">${esc(label)}</span>`;
+    const weighted = (rows, key, w = "frames") => { let s = 0, n = 0; for (const r of rows) { if (r[key] == null) continue; s += r[key] * (r[w] || 0); n += r[w] || 0; } return n ? s / n : null; };
+
+    function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove("show"), 1800); }
 
     function verdict(h) {
       if (h === null || h === undefined) return ["No data yet", ASH2];
@@ -304,6 +430,18 @@
       return ["Stuttering", EMBER];
     }
 
+    function syncUrl() {
+      const p = new URLSearchParams();
+      if (state.hours !== 24) p.set("h", state.hours);
+      if (state.app) p.set("app", state.app);
+      if (state.metric !== "frame_p95") p.set("metric", state.metric);
+      if (state.sel.scene) p.set("scene", state.sel.scene);
+      if (state.sel.device) p.set("device", state.sel.device);
+      const qs = p.toString();
+      history.replaceState(null, "", qs ? `?${qs}` : location.pathname);
+    }
+
+    // ---------- charts ----------
     const charts = {};
     function chart(id) {
       if (!window.echarts) return null;
@@ -311,23 +449,20 @@
       return charts[id];
     }
     window.addEventListener("resize", () => Object.values(charts).forEach(c => c.resize()));
-
     const tooltip = extra => Object.assign({
       backgroundColor: "rgba(18,16,14,0.96)", borderColor: LINE, borderWidth: 1, padding: [10, 12],
       textStyle: { color: WHITE, fontSize: 13, fontFamily: "Archivo, sans-serif" }, extraCssText: "border-radius:12px;"
     }, extra);
-    const base = () => ({
-      backgroundColor: "transparent",
-      textStyle: { fontFamily: "Archivo, sans-serif", color: ASH },
-      grid: { left: 4, right: 18, top: 18, bottom: 4, containLabel: true },
-      animationDuration: 500
-    });
+    const base = () => ({ backgroundColor: "transparent", textStyle: { fontFamily: "Archivo, sans-serif", color: ASH },
+      grid: { left: 4, right: 18, top: 18, bottom: 4, containLabel: true }, animationDuration: 400 });
     const valueAxis = extra => Object.assign({ type: "value", axisLine: { show: false }, axisTick: { show: false },
-      splitLine: { lineStyle: { color: LINE } }, axisLabel: { color: ASH2 } }, extra || {});
+      splitLine: { lineStyle: { color: LINE } }, axisLabel: { color: ASH2, hideOverlap: true } }, extra || {});
+    const lbl = extra => Object.assign({ color: ASH2, hideOverlap: true }, extra);
     const catAxis = extra => Object.assign({ type: "category", axisLine: { lineStyle: { color: LINE } }, axisTick: { show: false },
       axisLabel: { color: ASH2 } }, extra || {});
     const grad = (dir, stops) => new echarts.graphic.LinearGradient(dir[0], dir[1], dir[2], dir[3], stops.map(([o, c]) => ({ offset: o, color: c })));
 
+    // ---------- data ----------
     async function load() {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/octimonitor_overview`, {
         method: "POST",
@@ -338,12 +473,13 @@
       return res.json();
     }
 
-    async function refresh() {
+    async function refresh(manual) {
       try {
         state.data = await load();
         state.lastOk = Date.now();
         $("error").hidden = true;
         render(state.data);
+        if (manual) toast("Refreshed");
       } catch (e) {
         $("error").hidden = false;
         $("errorText").textContent = e.message || "";
@@ -361,17 +497,19 @@
       }
     }
 
+    // ---------- render ----------
     function render(d) {
       const apps = d.apps || [];
       const sel = $("app");
       if (sel.options.length !== apps.length + 1) {
         sel.innerHTML = `<option value="">All apps</option>` + apps.map(a => `<option value="${esc(a)}">${esc(appName(a))}</option>`).join("");
-        sel.value = state.app;
       }
+      sel.value = state.app;
       const t = d.totals || {}, o = d.overall || {};
       const has = (t.reports || 0) > 0;
       $("empty").hidden = has;
       $("content").hidden = !has;
+      $("export").disabled = !has;
       renderGauge(has ? o.hitch : null);
       if (!has) return;
 
@@ -384,12 +522,15 @@
       $("kFps").textContent = fmt(o.fps, 1);
       $("kP95").innerHTML = `${fmt(o.frame_p95, 1)}<small>ms</small>`;
 
-      renderTimeline(d.timeline || []);
-      renderScenes(d.scenes || []);
+      renderChecks(d);
+      renderTimeline();
+      renderScenes();
+      renderHeat();
       renderMinutes(d.session_minutes || []);
-      renderHeat(d.device_scene || []);
-      renderVersions(d.versions || []);
+      renderCompare();
       renderRecent(d.recent || []);
+      renderInspector();
+      state.firstLoad = false;
     }
 
     function renderGauge(h) {
@@ -397,9 +538,55 @@
       $("gValue").textContent = none ? "–" : fmt(h, 1);
       $("gPin").style.left = `${none ? 0 : Math.min(1, Math.max(0, h / 20)) * 100}%`;
       const v = verdict(h);
-      $("gVerdict").innerHTML = none
-        ? "Waiting for the first reports."
+      $("gVerdict").innerHTML = none ? "Waiting for the first reports."
         : `${heatTag(v[0], v[1])}&nbsp; ${h < 5 ? "Late frames are rare enough that players don't notice." : h <= 10 ? "Occasional hitches players can notice." : "Players feel the stutter."}`;
+    }
+
+    // Health checks: simple, explainable rules.
+    function runChecks(d) {
+      const out = [], o = d.overall || {};
+      if (o.hitch > 10) out.push({ sev: "critical", title: `Stutter across all play: ${fmt(o.hitch)} ms/s`, detail: "Above the 10 ms/s line where players feel it.", go: "pTimeline", metric: "hitch" });
+      else if (o.hitch > 5) out.push({ sev: "warning", title: `Noticeable hitches: ${fmt(o.hitch)} ms/s`, detail: "Between 5 and 10 ms/s overall.", go: "pTimeline", metric: "hitch" });
+      if (o.frame_p95 > BUDGET_MS * 1.5) out.push({ sev: "warning", title: `Frame p95 is ${fmt(o.frame_p95)} ms`, detail: `More than 1.5× the ${fmt(BUDGET_MS)} ms budget.`, go: "pTimeline", metric: "frame_p95" });
+      for (const s of d.scenes || []) {
+        if (s.gpu_p95 > BUDGET_MS) out.push({ sev: "critical", title: `${s.scene} misses the GPU budget`, detail: `GPU p95 ${fmt(s.gpu_p95)} ms, over the whole ${fmt(BUDGET_MS)} ms frame.`, scene: s.scene });
+        else if (s.gpu_p95 > BUDGET_MS * 0.75) out.push({ sev: "warning", title: `${s.scene} is close to the GPU budget`, detail: `GPU p95 ${fmt(s.gpu_p95)} ms, ${fmt(s.gpu_p95 / BUDGET_MS * 100, 0)}% of the frame.`, scene: s.scene });
+      }
+      for (const c of d.device_scene || []) {
+        if (c.frame_p95 > 25 && (c.frames || 0) > 300) out.push({ sev: "warning", title: `${c.scene} on ${deviceName(c.device)}`, detail: `Frame p95 ${fmt(c.frame_p95)} ms on this phone.`, scene: c.scene, device: c.device });
+      }
+      const hot = (d.session_minutes || []).filter(r => r.hot_share >= 0.3);
+      if (hot.length) out.push({ sev: "warning", title: "Phones heat up during play", detail: `From minute ${hot[0].minute}, ${fmt(hot[0].hot_share * 100, 0)}% of sessions report serious heat.`, go: "pHeat" });
+      const pair = latestPair(d.versions || []);
+      if (pair) {
+        const [prev, cur] = pair;
+        const worse = (a, b) => a != null && b != null && b > a * 1.1;
+        if (worse(prev.hitch, cur.hitch)) out.push({ sev: "warning", title: `Regression in ${cur.version}`, detail: `Hitch time ${fmt(prev.hitch)} → ${fmt(cur.hitch)} ms/s vs ${prev.version}.`, go: "pCompare" });
+        else if (worse(prev.frame_p95, cur.frame_p95)) out.push({ sev: "warning", title: `Regression in ${cur.version}`, detail: `Frame p95 ${fmt(prev.frame_p95)} → ${fmt(cur.frame_p95)} ms vs ${prev.version}.`, go: "pCompare" });
+      }
+      const order = { critical: 0, warning: 1 };
+      return out.sort((a, b) => order[a.sev] - order[b.sev]).slice(0, 8);
+    }
+
+    function renderChecks(d) {
+      const list = runChecks(d);
+      const crit = list.filter(c => c.sev === "critical").length, warn = list.length - crit;
+      const sum = $("checkSummary");
+      if (!list.length) { sum.textContent = "All checks passing"; sum.style.setProperty("--c", WHITE); }
+      else { sum.textContent = [crit && `${crit} critical`, warn && `${warn} warning${warn === 1 ? "" : "s"}`].filter(Boolean).join(", "); sum.style.setProperty("--c", crit ? FIRE : AMBER); }
+      $("checks").innerHTML = list.length
+        ? list.map((c, i) => `<li class="check clickable" tabindex="0" data-i="${i}"><span class="sev" style="--c:${SEV[c.sev][1]}">${SEV[c.sev][0]}</span><span><div class="check-title">${esc(c.title)}</div><div class="check-detail">${esc(c.detail)}</div></span><span class="check-go">Inspect</span></li>`).join("")
+        : `<li class="check"><span class="sev" style="--c:${WHITE}">Passing</span><span><div class="check-title">Within budget</div><div class="check-detail">Every material fits the GPU budget, hitches are under 5 ms/s and no regression against the previous build.</div></span><span></span></li>`;
+      $("checks").querySelectorAll(".check.clickable").forEach(el => {
+        const go = () => {
+          const c = list[Number(el.dataset.i)];
+          if (c.metric) setMetric(c.metric);
+          if (c.scene || c.device) { select({ scene: c.scene || null, device: c.device || null }); $(c.device ? "pHeatmap" : "pMaterials").scrollIntoView(); }
+          else if (c.go) $(c.go).scrollIntoView();
+        };
+        el.addEventListener("click", go);
+        el.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); go(); } });
+      });
     }
 
     function timeLabel(iso) {
@@ -409,50 +596,104 @@
         : dt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
     }
 
-    function renderTimeline(rows) {
+    function renderTimeline() {
       const c = chart("cTimeline"); if (!c) return;
+      const rows = state.data.timeline || [];
+      const m = METRICS[state.metric];
+      $("timelineNote").textContent = m.note;
       const x = rows.map(r => timeLabel(r.t));
+      const prev = c.getOption && c.getOption();
+      const zoom = prev && prev.dataZoom && prev.dataZoom[0] ? { start: prev.dataZoom[0].start, end: prev.dataZoom[0].end } : { start: 0, end: 100 };
       c.setOption(Object.assign(base(), {
+        grid: { left: 4, right: 18, top: 18, bottom: 4, containLabel: true },
         tooltip: tooltip({ trigger: "axis", axisPointer: { type: "line", lineStyle: { color: ASH2 } }, formatter: p => {
           const r = rows[p[0].dataIndex];
-          return `<b>${esc(x[p[0].dataIndex])}</b><br>Frame p95 <b>${fmt(r.frame_p95)} ms</b><br><span style="color:${ASH}">${fmt(r.fps)} fps, hitch ${fmt(r.hitch)} ms/s</span>`;
+          return `<b>${esc(x[p[0].dataIndex])}</b><br>${m.label} <b>${fmt(r[state.metric], m.digits)} ${m.unit}</b><br><span style="color:${ASH}">Frame p95 ${fmt(r.frame_p95)} ms, ${fmt(r.fps)} fps, hitch ${fmt(r.hitch)} ms/s</span>`;
         } }),
+        dataZoom: [{ type: "inside", start: zoom.start, end: zoom.end, zoomOnMouseWheel: true, moveOnMouseMove: true }],
         xAxis: catAxis({ data: x, boundaryGap: false }),
-        yAxis: valueAxis({ min: 0, axisLabel: { color: ASH2, formatter: "{value} ms" } }),
+        yAxis: valueAxis({ min: 0, axisLabel: { color: ASH2, formatter: `{value} ${m.unit}` } }),
         series: [{
-          type: "line", data: rows.map(r => r.frame_p95), smooth: 0.25, showSymbol: rows.length < 30, symbolSize: 8,
+          type: "line", data: rows.map(r => r[state.metric]), smooth: 0.25, showSymbol: rows.length < 30, symbolSize: 8,
           lineStyle: { width: 2.5, color: grad([0, 0, 1, 0], [[0, AMBER], [1, EMBER]]) },
           itemStyle: { color: EMBER, borderColor: "#000", borderWidth: 2 },
           areaStyle: { color: grad([0, 0, 0, 1], [[0, "rgba(255,90,31,0.35)"], [1, "rgba(255,90,31,0)"]]) },
           markLine: { silent: true, symbol: "none", lineStyle: { color: ASH2, type: "dashed", width: 1 },
-                      label: { formatter: "60 fps budget", color: ASH, position: "insideEndTop" }, data: [{ yAxis: 16.67 }] }
+                      label: { color: ASH, position: "insideEndTop" },
+                      data: m.ref.map(r => ({ yAxis: r.y, label: { formatter: r.label } })) }
         }]
       }), true);
     }
 
-    function renderScenes(scenes) {
+    function renderScenes() {
       const c = chart("cScenes"); if (!c) return;
+      const scenes = state.data.scenes || [];
       const rows = scenes.slice().sort((a, b) => (a.gpu_p95 || 0) - (b.gpu_p95 || 0));
+      const pick = state.sel.scene;
       $("cScenes").style.height = Math.max(180, rows.length * 40 + 40) + "px";
       c.resize();
       c.setOption(Object.assign(base(), {
-        grid: { left: 4, right: 64, top: 6, bottom: 4, containLabel: true },
+        grid: { left: 4, right: 64, top: 26, bottom: 4, containLabel: true },
         tooltip: tooltip({ trigger: "item", formatter: p => {
           const r = rows[p.dataIndex];
-          return `<b>${esc(r.scene)}</b><br>GPU p95 <b>${fmt(r.gpu_p95)} ms</b>, p50 ${fmt(r.gpu_p50)} ms<br><span style="color:${ASH}">Frame p95 ${fmt(r.frame_p95)} ms, ${fmt(r.fps)} fps<br>Hitch ${fmt(r.hitch)} ms/s, ${int(r.dropped)} dropped</span>`;
+          return `<b>${esc(r.scene)}</b><br>GPU p95 <b>${fmt(r.gpu_p95)} ms</b>, p50 ${fmt(r.gpu_p50)} ms<br><span style="color:${ASH}">Frame p95 ${fmt(r.frame_p95)} ms, ${fmt(r.fps)} fps<br>Hitch ${fmt(r.hitch)} ms/s, ${int(r.dropped)} dropped</span><br><span style="color:${AMBER}">Click to inspect</span>`;
         } }),
-        xAxis: valueAxis({ min: 0, axisLabel: { color: ASH2, formatter: "{value} ms" } }),
-        yAxis: catAxis({ data: rows.map(r => r.scene), axisLine: { show: false }, axisLabel: { color: WHITE, fontWeight: 500, fontSize: 13 } }),
-        series: [{ type: "bar", data: rows.map(r => r.gpu_p95), barMaxWidth: 20,
-                   itemStyle: { color: grad([0, 0, 1, 0], [[0, "#ff3d00"], [0.6, EMBER], [1, AMBER]]), borderRadius: [0, 6, 6, 0] },
-                   label: { show: true, position: "right", color: WHITE, fontWeight: 600, formatter: p => `${fmt(p.value)} ms` } }]
+        xAxis: valueAxis({ min: 0, splitNumber: 4, axisLabel: lbl({ formatter: "{value} ms" }) }),
+        yAxis: catAxis({ data: rows.map(r => r.scene), triggerEvent: true, axisLine: { show: false },
+          axisLabel: { color: WHITE, fontWeight: 500, fontSize: 13, formatter: v => pick && v !== pick ? `{dim|${v}}` : v, rich: { dim: { color: ASH2, fontSize: 13 } } } }),
+        series: [{ type: "bar", data: rows.map(r => ({ value: r.gpu_p95, itemStyle: { opacity: pick && r.scene !== pick ? 0.25 : 1 } })), barMaxWidth: 20, cursor: "pointer",
+                   itemStyle: { color: grad([0, 0, 1, 0], [[0, FIRE], [0.6, EMBER], [1, AMBER]]), borderRadius: [0, 6, 6, 0] },
+                   label: { show: true, position: "right", color: WHITE, fontWeight: 600, formatter: p => `${fmt(p.value)} ms` },
+                   markLine: { silent: true, symbol: "none", lineStyle: { color: ASH2, type: "dashed" }, label: { formatter: "60 fps frame", color: ASH, position: "end", distance: 6 }, data: [{ xAxis: BUDGET_MS }] } }]
       }), true);
+      c.off("click");
+      c.on("click", p => {
+        const name = p.componentType === "yAxis" ? p.value : rows[p.dataIndex] && rows[p.dataIndex].scene;
+        if (name) select({ scene: state.sel.scene === name && !state.sel.device ? null : name, device: null });
+      });
 
       const sorted = scenes.slice().sort((a, b) => (b.gpu_p95 || 0) - (a.gpu_p95 || 0));
       $("scenesTable").innerHTML =
         `<thead><tr><th>Material</th><th class="r">FPS</th><th class="r">Frame p95</th><th class="r">GPU p50</th><th class="r">GPU p95</th><th class="r">Hitch</th><th class="r">Dropped</th></tr></thead><tbody>` +
-        sorted.map(r => `<tr><td>${esc(r.scene)}</td><td class="r">${fmt(r.fps)}</td><td class="r">${fmt(r.frame_p95)} ms</td><td class="r">${fmt(r.gpu_p50)} ms</td><td class="r">${fmt(r.gpu_p95)} ms</td><td class="r">${fmt(r.hitch)} ms/s</td><td class="r">${int(r.dropped)}</td></tr>`).join("") +
+        sorted.map(r => `<tr class="pick${pick === r.scene ? " selected" : ""}" data-scene="${esc(r.scene)}" tabindex="0"><td>${esc(r.scene)}</td><td class="r">${fmt(r.fps)}</td><td class="r">${fmt(r.frame_p95)} ms</td><td class="r">${fmt(r.gpu_p50)} ms</td><td class="r">${fmt(r.gpu_p95)} ms</td><td class="r">${fmt(r.hitch)} ms/s</td><td class="r">${int(r.dropped)}</td></tr>`).join("") +
         `</tbody>`;
+      bindPicks($("scenesTable"));
+    }
+
+    function renderHeat() {
+      const c = chart("cHeat"); if (!c) return;
+      const cells = state.data.device_scene || [];
+      const scenes = [...new Set(cells.map(r => r.scene))].sort();
+      const devices = [...new Set(cells.map(r => r.device))].sort();
+      const max = Math.max(1, ...cells.map(r => r.gpu_p95 || 0));
+      const { scene: ps, device: pd } = state.sel;
+      $("cHeat").style.height = Math.max(200, devices.length * 48 + 90) + "px";
+      c.resize();
+      const data = cells.map(r => {
+        const v = r.gpu_p95 || 0;
+        const on = (!ps || r.scene === ps) && (!pd || r.device === pd);
+        return { value: [scenes.indexOf(r.scene), devices.indexOf(r.device), v], scene: r.scene, device: r.device,
+                 label: { color: v / max > 0.7 ? "#1a0a02" : WHITE }, itemStyle: { opacity: on ? 1 : 0.22 },
+                 frames: r.frames, frame_p95: r.frame_p95 };
+      });
+      c.setOption(Object.assign(base(), {
+        grid: { left: 4, right: 4, top: 6, bottom: 54, containLabel: true },
+        tooltip: tooltip({ trigger: "item", formatter: p => p.componentType !== "series" ? "" :
+          `<b>${esc(p.data.scene)}</b> on ${esc(deviceName(p.data.device))}<br>GPU p95 <b>${fmt(p.value[2])} ms</b><br><span style="color:${ASH}">Frame p95 ${fmt(p.data.frame_p95)} ms, ${int(p.data.frames)} frames</span><br><span style="color:${AMBER}">Click to inspect</span>` }),
+        xAxis: catAxis({ data: scenes, triggerEvent: true, axisLine: { show: false }, axisLabel: { color: WHITE, interval: 0, rotate: scenes.length > 6 ? 30 : 0 } }),
+        yAxis: catAxis({ data: devices.map(deviceName), triggerEvent: true, axisLine: { show: false }, axisLabel: { color: WHITE } }),
+        visualMap: { min: 0, max, calculable: false, orient: "horizontal", left: "center", bottom: 0, itemWidth: 12, itemHeight: 220,
+                     text: [`${fmt(max)} ms`, "0"], textStyle: { color: ASH }, inRange: { color: HEAT_RAMP } },
+        series: [{ type: "heatmap", data, cursor: "pointer", label: { show: true, formatter: p => fmt(p.value[2]), fontSize: 13, fontWeight: 600 },
+                   itemStyle: { borderColor: "#000", borderWidth: 3, borderRadius: 8 },
+                   emphasis: { itemStyle: { borderColor: WHITE, borderWidth: 1 } } }]
+      }), true);
+      c.off("click");
+      c.on("click", p => {
+        if (p.componentType === "series") select({ scene: p.data.scene, device: p.data.device });
+        else if (p.componentType === "xAxis") select({ scene: p.value, device: null });
+        else if (p.componentType === "yAxis") { const id = devices[devices.map(deviceName).indexOf(p.value)]; select({ scene: null, device: id }); }
+      });
     }
 
     function renderMinutes(rows) {
@@ -474,61 +715,194 @@
         tooltip: tip(r => `Running hot <b>${fmt((r.hot_share || 0) * 100, 0)}%</b>`),
         xAxis: catAxis({ data: x }), yAxis: valueAxis({ min: 0, max: 100, axisLabel: { color: ASH2, formatter: "{value}%" } }),
         series: [{ type: "bar", data: rows.map(r => Math.round((r.hot_share || 0) * 100)), barMaxWidth: 14,
-                   itemStyle: { color: grad([0, 0, 0, 1], [[0, AMBER], [1, "#ff3d00"]]), borderRadius: [5, 5, 0, 0] } }]
+                   itemStyle: { color: grad([0, 0, 0, 1], [[0, AMBER], [1, FIRE]]), borderRadius: [5, 5, 0, 0] } }]
       }), true);
     }
 
-    function renderHeat(cells) {
-      const c = chart("cHeat"); if (!c) return;
-      const scenes = [...new Set(cells.map(r => r.scene))].sort();
-      const devices = [...new Set(cells.map(r => r.device))].sort();
-      const max = Math.max(1, ...cells.map(r => r.gpu_p95 || 0));
-      $("cHeat").style.height = Math.max(200, devices.length * 48 + 90) + "px";
-      c.resize();
-      const data = cells.map(r => {
-        const v = r.gpu_p95 || 0;
-        return { value: [scenes.indexOf(r.scene), devices.indexOf(r.device), v],
-                 label: { color: v / max > 0.7 ? "#1a0a02" : WHITE }, frames: r.frames, frame_p95: r.frame_p95 };
+    // ---------- inspector ----------
+    function select(sel) {
+      state.sel = { scene: sel.scene || null, device: sel.device || null };
+      syncUrl();
+      renderScenes(); renderHeat(); renderInspector();
+    }
+
+    function bindPicks(root) {
+      root.querySelectorAll("tr.pick").forEach(tr => {
+        const go = () => select({ scene: tr.dataset.scene || null, device: tr.dataset.device || null });
+        tr.addEventListener("click", go);
+        tr.addEventListener("keydown", e => { if (e.key === "Enter") go(); });
       });
-      c.setOption(Object.assign(base(), {
-        grid: { left: 4, right: 4, top: 6, bottom: 54, containLabel: true },
-        tooltip: tooltip({ trigger: "item", formatter: p =>
-          `<b>${esc(scenes[p.value[0]])}</b> on ${esc(deviceName(devices[p.value[1]]))}<br>GPU p95 <b>${fmt(p.value[2])} ms</b><br><span style="color:${ASH}">Frame p95 ${fmt(p.data.frame_p95)} ms, ${int(p.data.frames)} frames</span>` }),
-        xAxis: catAxis({ data: scenes, axisLine: { show: false }, axisLabel: { color: WHITE, interval: 0, rotate: scenes.length > 6 ? 30 : 0 } }),
-        yAxis: catAxis({ data: devices.map(deviceName), axisLine: { show: false }, axisLabel: { color: WHITE } }),
-        visualMap: { min: 0, max, calculable: false, orient: "horizontal", left: "center", bottom: 0, itemWidth: 12, itemHeight: 220,
-                     text: [`${fmt(max)} ms`, "0"], textStyle: { color: ASH }, inRange: { color: HEAT_RAMP } },
-        series: [{ type: "heatmap", data, label: { show: true, formatter: p => fmt(p.value[2]), fontSize: 13, fontWeight: 600 },
-                   itemStyle: { borderColor: "#000", borderWidth: 3, borderRadius: 8 },
-                   emphasis: { itemStyle: { borderColor: WHITE, borderWidth: 1 } } }]
-      }), true);
     }
 
-    function renderVersions(rows) {
+    function rowbars(items, max, unit, onPick) {
+      return items.map((it, i) => `<div class="rowbar" data-i="${i}" tabindex="0"><span class="rowbar-name">${esc(it.name)}</span><span class="rowbar-track"><span class="rowbar-fill" style="display:block;width:${Math.max(3, (it.value || 0) / max * 100)}%"></span></span><span class="rowbar-val">${fmt(it.value)} ${unit}</span></div>`).join("");
+    }
+
+    function renderInspector() {
+      const body = $("inspectorBody");
+      const d = state.data; if (!d) return;
+      const { scene, device } = state.sel;
+      if (!scene && !device) {
+        body.innerHTML = `<p class="empty">Select a material or a phone in any chart or table to see its breakdown here.</p>`;
+        return;
+      }
+      const cells = d.device_scene || [];
+      const chips = `<div class="chips">${scene ? `<span class="chip">${esc(scene)}<button type="button" data-clear="scene" aria-label="Clear material">×</button></span>` : ""}${device ? `<span class="chip">${esc(deviceName(device))}<button type="button" data-clear="device" aria-label="Clear phone">×</button></span>` : ""}</div>`;
+      let html = chips;
+
+      if (scene && device) {
+        const c = cells.find(r => r.scene === scene && r.device === device);
+        const all = cells.filter(r => r.scene === scene);
+        const avg = weighted(all, "gpu_p95");
+        html += c ? `<div class="mini"><div><span>GPU p95</span><b>${fmt(c.gpu_p95)}</b></div><div><span>Frame p95</span><b>${fmt(c.frame_p95)}</b></div><div><span>Frames</span><b>${int(c.frames)}</b></div></div>
+          ${budgetBar(c.gpu_p95)}
+          <p class="hint">${compareText(c.gpu_p95, avg, `${esc(scene)} on all phones`)}</p>` : `<p class="empty">No data for this pair in the selected range.</p>`;
+      } else if (scene) {
+        const s = (d.scenes || []).find(r => r.scene === scene);
+        const per = cells.filter(r => r.scene === scene).sort((a, b) => b.gpu_p95 - a.gpu_p95);
+        if (s) {
+          const avgAll = weighted(d.scenes || [], "gpu_p95");
+          html += `<div class="mini"><div><span>GPU p95</span><b>${fmt(s.gpu_p95)}</b></div><div><span>Frame p95</span><b>${fmt(s.frame_p95)}</b></div><div><span>FPS</span><b>${fmt(s.fps)}</b></div>
+            <div><span>Hitch ms/s</span><b>${fmt(s.hitch)}</b></div><div><span>Dropped</span><b>${int(s.dropped)}</b></div><div><span>Reduced quality</span><b>${fmt((s.degraded || 0) * 100, 0)}%</b></div></div>
+            ${budgetBar(s.gpu_p95)}
+            <p class="hint">${compareText(s.gpu_p95, avgAll, "the average material")}</p>
+            <div class="rows"><h3>By phone, GPU p95</h3>${rowbars(per.map(r => ({ name: deviceName(r.device), value: r.gpu_p95, key: r.device })), Math.max(BUDGET_MS, ...per.map(r => r.gpu_p95)), "ms")}</div>`;
+          setTimeout(() => body.querySelectorAll(".rows .rowbar").forEach((el, i) => el.addEventListener("click", () => select({ scene, device: per[i].device }))), 0);
+        } else html += `<p class="empty">No data for ${esc(scene)} in the selected range.</p>`;
+      } else {
+        const per = cells.filter(r => r.device === device).sort((a, b) => b.gpu_p95 - a.gpu_p95);
+        const frames = per.reduce((n, r) => n + (r.frames || 0), 0);
+        html += per.length ? `<div class="mini"><div><span>GPU p95</span><b>${fmt(weighted(per, "gpu_p95"))}</b></div><div><span>Frame p95</span><b>${fmt(weighted(per, "frame_p95"))}</b></div><div><span>Frames</span><b>${int(frames)}</b></div></div>
+          <div class="rows"><h3>By material, GPU p95</h3>${rowbars(per.map(r => ({ name: r.scene, value: r.gpu_p95 })), Math.max(BUDGET_MS, ...per.map(r => r.gpu_p95)), "ms")}</div>` : `<p class="empty">No data for this phone in the selected range.</p>`;
+        setTimeout(() => body.querySelectorAll(".rows .rowbar").forEach((el, i) => el.addEventListener("click", () => select({ scene: per[i].scene, device }))), 0);
+      }
+      body.innerHTML = html;
+      body.querySelectorAll("[data-clear]").forEach(b => b.addEventListener("click", () => {
+        const s = Object.assign({}, state.sel); s[b.dataset.clear] = null; select(s);
+      }));
+    }
+
+    function compareText(v, avg, what) {
+      if (!avg || v == null) return "";
+      const pct = (v / avg - 1) * 100;
+      if (Math.abs(pct) < 1) return `Same as ${what} (${fmt(avg)} ms).`;
+      return `${fmt(Math.abs(pct), 0)}% ${pct > 0 ? "heavier" : "lighter"} than ${what} (${fmt(avg)} ms).`;
+    }
+
+    function budgetBar(gpu) {
+      const share = (gpu || 0) / BUDGET_MS;
+      return `<div class="budget"><div class="budget-row"><span>Share of the 60 fps frame</span><span class="num" style="color:${share > 1 ? FIRE : share > 0.75 ? AMBER : WHITE}">${fmt(share * 100, 0)}%</span></div><div class="budget-track"><div class="budget-fill" style="width:${Math.min(100, share * 100)}%"></div></div></div>`;
+    }
+
+    // ---------- build comparison ----------
+    const vkey = v => `${v.app}|${v.version}`;
+    function sortVersions(vs) {
+      const num = s => (String(s).match(/\d+/g) || []).map(Number);
+      return vs.slice().sort((a, b) => { const x = num(a.version), y = num(b.version);
+        for (let i = 0; i < Math.max(x.length, y.length); i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d; } return 0; });
+    }
+    function latestPair(vs) {
+      const apps = [...new Set(vs.map(v => v.app))];
+      for (const a of apps) { const s = sortVersions(vs.filter(v => v.app === a)); if (s.length >= 2) return [s[s.length - 2], s[s.length - 1]]; }
+      return null;
+    }
+
+    function renderCompare() {
+      const vs = sortVersions(state.data.versions || []);
+      const opts = vs.map(v => `<option value="${esc(vkey(v))}">${esc(appName(v.app))} ${esc(v.version)}</option>`).join("");
+      const b = $("baseline"), c = $("candidate");
+      if (b.dataset.opts !== opts) { b.innerHTML = opts; c.innerHTML = opts; b.dataset.opts = opts; }
+      const keys = vs.map(vkey);
+      if (!keys.includes(state.compare.cand)) state.compare.cand = keys[keys.length - 1] || null;
+      if (!keys.includes(state.compare.base)) state.compare.base = keys[Math.max(0, keys.length - 2)] || null;
+      b.value = state.compare.base || ""; c.value = state.compare.cand || "";
+
+      const A = vs.find(v => vkey(v) === state.compare.base), B = vs.find(v => vkey(v) === state.compare.cand);
+      if (!A || !B || vs.length < 2) {
+        $("compareTable").innerHTML = `<tbody><tr><td class="muted" style="white-space:normal">Only one build has reported so far. Ship the next build and the comparison fills in automatically.</td></tr></tbody>`;
+      } else {
+        const rows = [["Frame rate", "fps", 1, true], ["Frame time p95", "frame_p95", 1, false], ["GPU time p95", "gpu_p95", 1, false], ["Hitch time", "hitch", 1, false], ["Sessions", "sessions", 0, null]];
+        const units = { fps: "fps", frame_p95: "ms", gpu_p95: "ms", hitch: "ms/s", sessions: "" };
+        $("compareTable").innerHTML = `<thead><tr><th>Metric</th><th class="r">${esc(A.version)}</th><th class="r">${esc(B.version)}</th><th class="r">Change</th><th></th></tr></thead><tbody>` +
+          rows.map(([label, k, dg, higherBetter]) => {
+            const a = A[k], b2 = B[k];
+            let pct = a ? (b2 - a) / a * 100 : null, cls = "same", word = "";
+            if (higherBetter !== null && pct !== null) {
+              const good = higherBetter ? pct > 1 : pct < -1, bad = higherBetter ? pct < -1 : pct > 1;
+              cls = good ? "better" : bad ? "worse" : "same"; word = good ? "Better" : bad ? "Worse" : "Same";
+            }
+            return `<tr><td>${label}</td><td class="r">${fmt(a, dg)} ${units[k]}</td><td class="r">${fmt(b2, dg)} ${units[k]}</td><td class="r"><span class="delta ${cls}">${pct === null ? "–" : (pct > 0 ? "+" : "") + fmt(pct, 1) + "%"}</span></td><td>${word ? `<span class="delta ${cls}">${word}</span>` : ""}</td></tr>`;
+          }).join("") + `</tbody>`;
+      }
       $("versionsTable").innerHTML =
         `<thead><tr><th>Build</th><th class="r">Sessions</th><th class="r">FPS</th><th class="r">Frame p95</th><th class="r">GPU p95</th><th>Hitch</th></tr></thead><tbody>` +
-        rows.map(r => { const v = verdict(r.hitch);
+        vs.slice().reverse().map(r => { const v = verdict(r.hitch);
           return `<tr><td>${esc(appName(r.app))} <span class="muted">${esc(r.version)}</span></td><td class="r">${int(r.sessions)}</td><td class="r">${fmt(r.fps)}</td><td class="r">${fmt(r.frame_p95)} ms</td><td class="r">${fmt(r.gpu_p95)} ms</td><td>${fmt(r.hitch)} ms/s &nbsp;${heatTag(v[0], v[1])}</td></tr>`; }).join("") +
         `</tbody>`;
     }
 
+    // ---------- live feed ----------
     function renderRecent(rows) {
       const ago = iso => { const s = Math.max(0, Math.round((Date.now() - new Date(iso)) / 1000));
         return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : new Date(iso).toLocaleDateString("en-GB"); };
+      const key = r => `${r.at}|${r.device}|${r.scene}`;
       $("recentTable").innerHTML =
-        `<thead><tr><th>When</th><th>Device</th><th>Material</th><th class="r">FPS</th><th class="r">GPU p95</th><th>Heat</th></tr></thead><tbody>` +
-        rows.slice(0, 10).map(r => { const th = THERMAL[r.thermal] || ["Unknown", ASH2];
-          return `<tr><td class="muted">${ago(r.at)}</td><td>${esc(deviceName(r.device))}</td><td>${esc(r.scene)}</td><td class="r">${fmt(r.fps)}</td><td class="r">${fmt(r.gpu_p95)} ms</td><td>${heatTag(th[0], th[1])}</td></tr>`; }).join("") +
+        `<thead><tr><th>When</th><th>Device</th><th>Material</th><th class="r">FPS</th><th class="r">Frame p95</th><th class="r">GPU p95</th><th>Heat</th><th>Build</th></tr></thead><tbody>` +
+        rows.slice(0, 12).map(r => { const th = THERMAL[r.thermal] || ["Unknown", ASH2];
+          const fresh = !state.firstLoad && !state.seenRecent.has(key(r));
+          return `<tr class="pick${fresh ? " fresh" : ""}" data-scene="${esc(r.scene)}" data-device="${esc(r.device)}" tabindex="0"><td class="muted">${ago(r.at)}</td><td>${esc(deviceName(r.device))}</td><td>${esc(r.scene)}</td><td class="r">${fmt(r.fps)}</td><td class="r">${fmt(r.frame_p95)} ms</td><td class="r">${fmt(r.gpu_p95)} ms</td><td>${heatTag(th[0], th[1])}</td><td class="muted">${esc(r.version)}</td></tr>`; }).join("") +
         `</tbody>`;
+      rows.forEach(r => state.seenRecent.add(key(r)));
+      bindPicks($("recentTable"));
     }
+
+    // ---------- export ----------
+    function exportCsv() {
+      const d = state.data; if (!d) return;
+      const q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+      const lines = ["section,material,device,frames,fps,frame_p95_ms,gpu_p50_ms,gpu_p95_ms,hitch_ms_per_s,dropped"];
+      for (const s of d.scenes || []) lines.push(["material", s.scene, "", s.frames, s.fps, s.frame_p95, s.gpu_p50, s.gpu_p95, s.hitch, s.dropped].map(q).join(","));
+      for (const c of d.device_scene || []) lines.push(["material_device", c.scene, deviceName(c.device), c.frames, "", c.frame_p95, "", c.gpu_p95, "", ""].map(q).join(","));
+      for (const v of d.versions || []) lines.push(["build", "", "", "", v.fps, v.frame_p95, "", v.gpu_p95, v.hitch, ""].map(q).join(",").replace(/^build,,/, `build,${q(appName(v.app) + " " + v.version)},`));
+      const blob = new Blob([lines.join("\n")], { type: "text/csv" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `octimonitor-${state.hours}h-${new Date().toISOString().slice(0, 10)}.csv`;
+      a.click(); URL.revokeObjectURL(a.href);
+      toast("CSV downloaded");
+    }
+
+    // ---------- controls ----------
+    function setMetric(m) {
+      state.metric = m;
+      for (const b of $("metric").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.metric === m));
+      syncUrl();
+      if (state.data) renderTimeline();
+    }
+    for (const b of $("range").querySelectorAll("button")) b.setAttribute("aria-pressed", String(Number(b.dataset.hours) === state.hours));
+    for (const b of $("metric").querySelectorAll("button")) b.setAttribute("aria-pressed", String(b.dataset.metric === state.metric));
 
     $("range").addEventListener("click", e => {
       const b = e.target.closest("button[data-hours]"); if (!b) return;
       state.hours = Number(b.dataset.hours);
       for (const x of $("range").querySelectorAll("button")) x.setAttribute("aria-pressed", String(x === b));
-      refresh();
+      syncUrl(); refresh();
     });
-    $("app").addEventListener("change", e => { state.app = e.target.value; refresh(); });
+    $("metric").addEventListener("click", e => { const b = e.target.closest("button[data-metric]"); if (b) setMetric(b.dataset.metric); });
+    $("app").addEventListener("change", e => { state.app = e.target.value; syncUrl(); refresh(); });
+    $("baseline").addEventListener("change", e => { state.compare.base = e.target.value; renderCompare(); });
+    $("candidate").addEventListener("change", e => { state.compare.cand = e.target.value; renderCompare(); });
+    $("export").addEventListener("click", exportCsv);
+    $("share").addEventListener("click", async () => {
+      syncUrl();
+      try { await navigator.clipboard.writeText(location.href); toast("Link copied"); }
+      catch { toast("Copy the address bar to share this view"); }
+    });
+    document.addEventListener("keydown", e => {
+      if (e.target.closest("input, select, textarea")) return;
+      if (e.key === "Escape" && (state.sel.scene || state.sel.device)) select({});
+      if ((e.key === "r" || e.key === "R") && !e.metaKey && !e.ctrlKey) refresh(true);
+    });
 
     function schedule() {
       clearInterval(state.timer);
