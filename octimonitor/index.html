@@ -292,7 +292,7 @@
       box-shadow: 0 0 10px rgba(255, 150, 60, .55);
       animation: wave var(--cycle) linear infinite; }
     @keyframes wave { 0% { transform: translateX(0); opacity: 0; } 6% { opacity: 1; } 94% { opacity: 1; } 100% { transform: translateX(calc(100% * 100 / 26)); opacity: 0; } }
-    .stage .stage-num { animation: node var(--cycle, 4.8s) ease-out infinite; animation-delay: calc(var(--i) * 4.8s / 3 * 0.88 + 0.29s - 4.8s); }
+    .stage .stage-num { animation: node 4.8s linear infinite; animation-delay: calc((var(--i) / 3 - 0.06) * 4.8s); }
     @keyframes node {
       0%, 100% { box-shadow: 0 0 0 2px #0a0706, 0 0 0 3.5px rgba(255, 140, 50, calc(.45 + var(--i) * .15)), 0 8px 24px -6px rgba(255, 90, 31, .6); }
       6% { box-shadow: 0 0 0 2px #0a0706, 0 0 0 3.5px rgba(255, 210, 160, 1), 0 0 26px 2px rgba(255, 150, 60, .75); }
@@ -337,11 +337,11 @@
       .kpi:last-child { grid-column: 1 / -1; border-left: 0; }
       .grid.split, .pair { grid-template-columns: 1fr; }
       .pipe { grid-template-columns: 1fr; gap: 14px; padding-top: 0; padding-left: 58px; }
-      .pipe-note { text-align: left; }
+      .pipe-note { text-align: center; }
       .pipe-line { left: 21px; right: auto; top: 80px; bottom: 80px; width: 2px; height: auto; background: linear-gradient(180deg, rgba(255,61,0,.15), rgba(255,140,40,.55), rgba(255,241,214,.35)); }
       .pipe-line::after { left: 0; top: -13%; width: 2px; height: 26%; background: linear-gradient(180deg, rgba(255,214,160,0), rgba(255,226,190,.95) 50%, rgba(255,214,160,0)); animation-name: wavev; }
       @keyframes wavev { 0% { transform: translateY(0); opacity: 0; } 6% { opacity: 1; } 94% { opacity: 1; } 100% { transform: translateY(calc(100% * 100 / 26)); opacity: 0; } }
-      .stage { padding: 18px; text-align: left; }
+      .stage { padding: 18px; text-align: center; }
       /* Circles sit fully left of the cards, centred on each card and on the line */
       .stage .stage-num { top: 50%; margin-top: -22px; left: -58px; margin-left: 0; width: 44px; height: 44px; font-size: 16px; }
       .inspector { position: static; }
@@ -1178,6 +1178,22 @@
     const topbar = $("topbar");
     const onScroll = () => topbar.classList.toggle("condensed", scrollY > 24);
     addEventListener("scroll", onScroll, { passive: true }); onScroll();
+    // The wave crosses the line once per cycle at constant speed; a circle at fraction f of the line
+    // should peak at f of the cycle. Its flash peaks 6% into its own animation, hence the offset.
+    const CYCLE = 4.8;
+    function phasePipeline() {
+      const line = document.querySelector(".pipe-line"); if (!line) return;
+      const L = line.getBoundingClientRect(), vertical = L.height > L.width;
+      const start = vertical ? L.top : L.left, len = (vertical ? L.height : L.width) || 1;
+      document.querySelectorAll(".stage-num").forEach(n => {
+        const r = n.getBoundingClientRect();
+        const f = Math.min(1, Math.max(0, ((vertical ? r.top + r.height / 2 : r.left + r.width / 2) - start) / len));
+        n.style.animationDelay = `${((f - 0.06) * CYCLE).toFixed(3)}s`;
+      });
+    }
+    addEventListener("resize", phasePipeline);
+    (document.fonts ? document.fonts.ready : Promise.resolve()).then(phasePipeline);
+    phasePipeline();
     requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add("ready")));
     refresh();
     schedule();
