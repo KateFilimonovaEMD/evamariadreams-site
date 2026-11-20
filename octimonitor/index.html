@@ -104,7 +104,7 @@
     /* Fixed slots so the pill keeps its width as the status and the age change */
     #liveText { display: inline-block; min-width: 5.6em; }
     #updated { display: inline-block; min-width: 8.4em; font-variant-numeric: tabular-nums; }
-    .bar-right .ghost { white-space: nowrap; }
+    .bar-right .ghost { white-space: nowrap; text-decoration: none; }
     .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ash-2); }
     .live.on .dot { background: var(--online); box-shadow: 0 0 0 0 rgba(61, 220, 151, 0.55); animation: pulse 1.8s infinite; }
     @keyframes pulse { 70% { box-shadow: 0 0 0 9px rgba(61, 220, 151, 0); } 100% { box-shadow: 0 0 0 0 rgba(61, 220, 151, 0); } }
@@ -127,6 +127,8 @@
       -webkit-background-clip: text; background-clip: text; color: transparent;
       max-width: 13ch;
     }
+    .intro-link { color: var(--white); text-decoration: none; border-bottom: 1px solid rgba(255,176,32,.55); white-space: nowrap; transition: border-color .2s ease; }
+    .intro-link:hover { border-bottom-color: var(--amber); }
     .intro { margin: 22px 0 0; color: var(--ash); font-size: 18px; max-width: 50ch; }
     .select, .seg button {
       font-size: 14px; font-weight: 500; color: var(--white);
@@ -422,6 +424,7 @@
     <div class="topbar" id="topbar"><header class="bar glass">
       <span class="mark"><span class="mark-glyph" aria-hidden="true"></span>OctiMonitor</span>
       <div class="bar-right">
+        <a class="ghost glass" href="docs/">How it works</a>
         <button class="ghost glass" id="share" type="button">Copy link to this view</button>
         <button class="ghost glass" id="export" type="button" disabled>Export CSV</button>
         <span class="live glass" id="live"><span class="dot" aria-hidden="true"></span><b id="liveText">Connecting</b><span id="updated" aria-live="polite"></span></span>
@@ -431,7 +434,7 @@
     <section class="hero">
       <div class="hero-copy">
         <h1 class="reveal" style="--d:0">Every frame, measured on real phones.</h1>
-        <p class="intro reveal" style="--d:1">Live performance of our iOS apps as players actually experience it: how smooth each frame is, how hard the GPU works for every material, and what happens when the phone heats up.</p>
+        <p class="intro reveal" style="--d:1">Live performance of our iOS apps as players actually experience it: how smooth each frame is, how hard the GPU works for every material, and what happens when the phone heats up. <a class="intro-link" href="docs/">How every number is measured</a></p>
       </div>
 
       <div class="gauge glass reveal" style="--d:2" aria-labelledby="gLabel">
@@ -586,7 +589,7 @@
 
     <footer>
       <span>OctiMonitor by EvaMariaDreams<span class="keys"> &nbsp; <kbd>R</kbd> refresh &nbsp; <kbd>Esc</kbd> clear selection</span></span>
-      <a href="https://github.com/KateFilimonovaEMD/OctiMonitor">Source code on GitHub</a>
+      <span><a href="docs/">How it works</a> &nbsp; <a href="https://github.com/KateFilimonovaEMD/OctiMonitor">Source code on GitHub</a></span>
     </footer>
   </div>
   <div class="toast glass" id="toast" role="status"></div>
