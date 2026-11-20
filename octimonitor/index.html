@@ -112,16 +112,21 @@
     .ghost:active { transform: scale(.96); }
     .ghost[disabled] { opacity: .5; cursor: default; }
 
-    .hero { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 48px; align-items: end; padding: 64px 0 36px; }
+    .hero { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 40px; align-items: stretch; padding: 56px 0 28px; }
+    .hero-copy { display: flex; flex-direction: column; justify-content: center; }
+    /* Toolbar: all filters in one row under the hero, with a plain-language summary of the current view */
+    .toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px 20px; padding: 10px 10px 10px 10px; border-radius: 999px; margin-bottom: 20px; }
+    .toolbar-left { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+    .toolbar-view { color: var(--ash); font-size: 14px; padding-right: 12px; }
+    .toolbar-view b { color: var(--white); font-weight: 600; }
     h1 {
       margin: 0; font-family: var(--display); font-weight: 800; font-variation-settings: var(--wide);
-      font-size: clamp(40px, 6.2vw, 84px); line-height: 0.96; letter-spacing: -0.035em;
+      font-size: clamp(38px, 5.4vw, 74px); line-height: 0.97; letter-spacing: -0.035em;
       background: linear-gradient(172deg, #fff7ee 25%, #ffd08a 62%, #ff7a2a 92%);
       -webkit-background-clip: text; background-clip: text; color: transparent;
       max-width: 13ch;
     }
-    .intro { margin: 24px 0 0; color: var(--ash); font-size: 18px; max-width: 52ch; }
-    .controls { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; }
+    .intro { margin: 22px 0 0; color: var(--ash); font-size: 18px; max-width: 50ch; }
     .select, .seg button {
       font-size: 14px; font-weight: 500; color: var(--white);
       border: 0; border-radius: 999px; padding: 9px 16px; cursor: pointer;
@@ -141,7 +146,8 @@
     @media (prefers-reduced-motion: reduce) { .seg-thumb { transition: none; } }
     .seg.small button { padding: 5px 12px; font-size: 13px; }
 
-    .gauge { border-radius: var(--radius); padding: 30px; }
+    .gauge { border-radius: var(--radius); padding: 28px 30px; display: flex; flex-direction: column; justify-content: space-between; min-height: 100%; }
+    .gauge-body { margin: auto 0; padding: 10px 0; }
     .gauge.glass { background: linear-gradient(160deg, rgba(255, 90, 31, 0.26), rgba(255, 90, 31, 0.04) 55%, rgba(255, 247, 238, 0.03)); }
     .gauge-label { color: var(--ash); font-size: 14px; }
     .gauge-value { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 12px; row-gap: 2px; margin-top: 6px; }
@@ -365,7 +371,9 @@
     [hidden] { display: none !important; }
 
     @media (max-width: 980px) {
-      .hero { grid-template-columns: 1fr; gap: 32px; padding-top: 36px; }
+      .hero { grid-template-columns: 1fr; gap: 28px; padding-top: 36px; }
+      .toolbar { border-radius: 24px; }
+      .toolbar-view { padding: 0 6px 4px; }
       .strip { grid-template-columns: repeat(2, 1fr); }
       .kpi { border-left: 0; border-top: 1px solid rgba(255,247,238,.07); }
       .kpi:nth-child(-n+2) { border-top: 0; }
@@ -416,10 +424,24 @@
     </header></div>
 
     <section class="hero">
-      <div>
+      <div class="hero-copy">
         <h1 class="reveal" style="--d:0">Every frame, measured on real phones.</h1>
         <p class="intro reveal" style="--d:1">Live performance of our iOS apps as players actually experience it: how smooth each frame is, how hard the GPU works for every material, and what happens when the phone heats up.</p>
-        <div class="controls reveal" style="--d:2">
+      </div>
+
+      <div class="gauge glass reveal" style="--d:2" aria-labelledby="gLabel">
+        <div class="gauge-label" id="gLabel">Hitch time, the stutter players feel</div>
+        <div class="gauge-body">
+        <div class="gauge-value"><strong class="num" id="gValue"><span class="gauge-empty">No data yet</span></strong><span id="gUnit" hidden>ms per second</span></div>
+        <div class="gauge-track" aria-hidden="true"><div class="gauge-pin idle" id="gPin"></div></div>
+        <div class="gauge-scale" aria-hidden="true"><span>0 smooth</span><span>5</span><span>10</span><span>20+ stutter</span></div>
+        </div>
+        <div class="gauge-verdict" id="gVerdict">Waiting for the first reports.</div>
+      </div>
+    </section>
+
+    <div class="toolbar glass reveal" style="--d:3">
+      <div class="toolbar-left">
           <select class="select glass" id="app" aria-label="App"><option value="">All apps</option></select>
           <div class="seg glass" role="group" aria-label="Time range" id="range"><span class="seg-thumb" aria-hidden="true"></span>
             <button type="button" data-hours="1" aria-pressed="false">1 hour</button>
@@ -427,23 +449,15 @@
             <button type="button" data-hours="168" aria-pressed="false">7 days</button>
             <button type="button" data-hours="720" aria-pressed="false">30 days</button>
           </div>
-        </div>
-      </div>
-
-      <div class="gauge glass reveal" style="--d:2" aria-labelledby="gLabel">
-        <div class="gauge-label" id="gLabel">Hitch time, the stutter players feel</div>
-        <div class="gauge-value"><strong class="num" id="gValue"><span class="gauge-empty">No data yet</span></strong><span id="gUnit" hidden>ms per second</span></div>
-        <div class="gauge-track" aria-hidden="true"><div class="gauge-pin idle" id="gPin"></div></div>
-        <div class="gauge-scale" aria-hidden="true"><span>0 smooth</span><span>5</span><span>10</span><span>20+ stutter</span></div>
-        <div class="gauge-verdict" id="gVerdict">Waiting for the first reports.</div>
-      </div>
-    </section>
+              </div>
+      <span class="toolbar-view" id="viewLabel" aria-live="polite"></span>
+    </div>
 
     <div class="notice glass err" id="error" hidden><b>The data service isn't responding.</b> <span id="errorText"></span> The page retries every 10 seconds.</div>
     <div class="notice glass" id="empty" hidden><b>No reports in this time range yet.</b> Open one of the apps for a minute: the first numbers arrive within 30 seconds.</div>
 
     <main id="content" hidden>
-      <section class="strip glass reveal" style="--d:3" aria-label="Summary">
+      <section class="strip glass reveal" style="--d:4" aria-label="Summary">
         <div class="kpi"><div class="kpi-label">Playing now</div><div class="kpi-value num" id="kLive">–</div><div class="kpi-sub">in the last 2 min</div></div>
         <div class="kpi"><div class="kpi-label">Sessions</div><div class="kpi-value num" id="kSessions">–</div><div class="kpi-sub" id="kDevices">–</div></div>
         <div class="kpi"><div class="kpi-label">Frames measured</div><div class="kpi-value num" id="kFrames">–</div><div class="kpi-sub" id="kPlay">–</div></div>
@@ -780,6 +794,7 @@
       $("content").hidden = !has;
       $("export").disabled = !has;
       renderGauge(has ? o.hitch : null);
+      renderViewLabel();
       if (!has) return;
 
       tween($("kLive"), t.live_sessions, 0);
@@ -802,6 +817,11 @@
       renderInspector();
       placeThumbs();
       state.firstLoad = false;
+    }
+
+    function renderViewLabel() {
+      const range = { 1: "last hour", 24: "last 24 hours", 168: "last 7 days", 720: "last 30 days" }[state.hours];
+      $("viewLabel").innerHTML = `Showing <b>${esc(state.app ? appName(state.app) : "all apps")}</b>, ${range}`;
     }
 
     function renderGauge(h) {
