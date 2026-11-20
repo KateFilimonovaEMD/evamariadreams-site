@@ -54,7 +54,8 @@
     .mark { display: flex; align-items: center; gap: 12px; font-family: var(--display); font-weight: 700; font-size: 17px; letter-spacing: -0.01em; font-variation-settings: var(--wide); text-decoration: none; }
     .mark-glyph { width: 28px; height: 28px; border-radius: 9px; background: var(--heat); position: relative; flex: none; }
     .mark-glyph::after { content: ""; position: absolute; inset: 7px; border-radius: 4px; background: var(--black); }
-    .mark small { font-family: var(--text); font-weight: 500; font-size: 14px; color: var(--ash); letter-spacing: 0; font-variation-settings: normal; }
+    .brand { display: flex; align-items: baseline; gap: 12px; min-width: 0; }
+    .page-name { font-size: 14px; font-weight: 500; color: var(--ash); padding-left: 12px; border-left: 1px solid var(--line); cursor: default; }
     .ghost { color: var(--white); border-radius: 999px; padding: 8px 16px; font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap; transition: transform .35s var(--spring), background .25s ease; }
     .ghost:hover { background: linear-gradient(180deg, rgba(255,247,238,.13), rgba(255,247,238,.04)); }
     .ghost:active { transform: scale(.96); }
@@ -126,7 +127,7 @@
       .wrap { width: calc(100% - 28px); }
       .hero { padding: 40px 0 28px; }
       .lede { font-size: 17px; }
-      .mark small { display: none; }
+      .page-name { display: none; }
       .toc ol { columns: 1; }
       h2 { font-size: 25px; }
       .scale { grid-template-columns: 1fr; }
@@ -145,7 +146,7 @@
   <div class="ambient" aria-hidden="true"><i></i><i></i></div>
   <div class="wrap">
     <div class="topbar"><header class="bar glass">
-      <a class="mark" href="../"><span class="mark-glyph" aria-hidden="true"></span>OctiMonitor <small>Documentation</small></a>
+      <span class="brand"><a class="mark" href="../" aria-label="OctiMonitor dashboard"><span class="mark-glyph" aria-hidden="true"></span>OctiMonitor</a><span class="page-name" aria-current="page">Documentation</span></span>
       <a class="ghost glass" href="../">Open dashboard</a>
     </header></div>
 
