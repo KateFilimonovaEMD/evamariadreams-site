@@ -807,6 +807,13 @@
       const m = METRICS[state.metric];
       $("timelineNote").textContent = m.note;
       const x = rows.map(r => timeLabel(r.t));
+      // Same headroom rule as the axis, used to decide whether threshold labels have room of their own
+      const values = rows.map(r => r[state.metric]).filter(v => v != null);
+      const top = Math.ceil(Math.max((values.length ? Math.max(...values) : 0) * 1.18, ...m.ref.map(r => r.y * 1.1)));
+      const close = m.ref.length > 1 && (m.ref[m.ref.length - 1].y - m.ref[0].y) / top < 0.08;
+      const refLines = close
+        ? m.ref.map((r, i) => ({ yAxis: r.y, label: i === m.ref.length - 1 ? { formatter: m.ref.map(q => `${q.label} ${q.y}`).join(" · "), position: "insideEndTop" } : { show: false } }))
+        : m.ref.map((r, i) => ({ yAxis: r.y, label: { formatter: r.label, position: m.ref.length > 1 && i === 0 ? "insideEndBottom" : "insideEndTop" } }));
       const prev = c.getOption && c.getOption();
       const zoom = prev && prev.dataZoom && prev.dataZoom[0] ? { start: prev.dataZoom[0].start, end: prev.dataZoom[0].end } : { start: 0, end: 100 };
       apply(c, Object.assign(base(), {
@@ -818,7 +825,7 @@
         dataZoom: [{ type: "inside", start: zoom.start, end: zoom.end, zoomOnMouseWheel: true, moveOnMouseMove: true }],
         xAxis: catAxis({ data: x, boundaryGap: false }),
         // Headroom above the highest point so the line's glow never touches the top edge
-        yAxis: valueAxis({ min: 0, max: v => Math.ceil(Math.max(v.max * 1.18, ...m.ref.map(r => r.y * 1.1))), axisLabel: { color: ASH2, formatter: `{value} ${m.unit}` } }),
+        yAxis: valueAxis({ min: 0, max: top || null, axisLabel: { color: ASH2, formatter: `{value} ${m.unit}` } }),
         series: [{
           type: "line", data: rows.map(r => r[state.metric]), smooth: 0.45, smoothMonotone: "x", showSymbol: rows.length < 30, symbolSize: 9,
           lineStyle: Object.assign({ width: 3, color: grad([0, 0, 1, 0], [[0, AMBER], [1, EMBER]]), cap: "round", join: "round" }, glow("rgba(255,90,31,.55)", 18)),
@@ -826,8 +833,8 @@
           emphasis: { scale: 1.6, itemStyle: { color: WHITE, borderColor: AMBER, borderWidth: 3, shadowBlur: 20, shadowColor: "rgba(255,176,32,.8)" } },
           areaStyle: { color: grad([0, 0, 0, 1], [[0, "rgba(255,90,31,0.42)"], [0.6, "rgba(255,90,31,0.08)"], [1, "rgba(255,90,31,0)"]]) },
           markLine: { silent: true, symbol: "none", lineStyle: { color: ASH2, type: "dashed", width: 1 },
-                      label: { color: ASH, position: "insideEndTop" },
-                      data: m.ref.map(r => ({ yAxis: r.y, label: { formatter: r.label } })) }
+                      label: { color: ASH, position: "insideEndTop", fontSize: 11 },
+                      data: refLines }
         }]
       }), state.metricChanged);
       state.metricChanged = false;
