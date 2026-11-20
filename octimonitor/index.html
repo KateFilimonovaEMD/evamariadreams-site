@@ -64,15 +64,14 @@
       position: relative; isolation: isolate;
       background: var(--glass-fill);
       -webkit-backdrop-filter: blur(28px) saturate(170%); backdrop-filter: blur(28px) saturate(170%);
-      box-shadow: inset 0 1px 0 rgba(255, 247, 238, 0.14), inset 0 -1px 0 rgba(0, 0, 0, 0.35), 0 24px 60px -24px rgba(0, 0, 0, 0.8);
-      border: 0;
+      /* A real border anti-aliases cleanly on rounded corners; the top edge is lit, the bottom falls into shadow */
+      border: 1px solid rgba(255, 247, 238, 0.07);
+      border-top-color: rgba(255, 247, 238, 0.18);
+      border-bottom-color: rgba(255, 247, 238, 0.04);
+      box-shadow: inset 0 1px 0 rgba(255, 247, 238, 0.06), 0 24px 60px -24px rgba(0, 0, 0, 0.8);
+      background-clip: padding-box;
     }
-    .glass::before {
-      content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1px; pointer-events: none; z-index: -1;
-      background: var(--glass-edge);
-      -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor;
-      mask: linear-gradient(#000 0 0) content-box exclude, linear-gradient(#000 0 0);
-    }
+    .gauge.glass { border-color: rgba(255, 140, 60, 0.22); border-top-color: rgba(255, 190, 120, 0.4); }
     @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) { .glass { background: rgba(26, 23, 20, 0.92); } }
 
     /* One orchestrated entrance */
@@ -88,12 +87,10 @@
     .num { font-variant-numeric: tabular-nums; }
 
     .topbar { position: sticky; top: 10px; z-index: 30; margin-top: 10px; }
-    .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px 12px 18px; flex-wrap: wrap; border-radius: 999px; transition: padding .5s var(--spring), background .4s ease, box-shadow .4s ease; }
-    .bar:not(.glass)::before { display: none; }
+    .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 12px 14px 12px 18px; flex-wrap: wrap; border-radius: 999px; transition: padding .5s var(--spring), background .4s ease, box-shadow .4s ease, border-color .4s ease; }
     .topbar.condensed .bar { padding: 8px 10px 8px 16px; }
-    .topbar:not(.condensed) .bar { background: transparent; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
-    .topbar:not(.condensed) .bar::before { opacity: 0; }
-    .bar::before { transition: opacity .4s ease; }
+    .topbar:not(.condensed) .bar { background: transparent; box-shadow: none; border-color: transparent; -webkit-backdrop-filter: none; backdrop-filter: none; }
+
     .mark { display: flex; align-items: center; gap: 12px; font-family: var(--display); font-weight: 700; font-size: 17px; letter-spacing: -0.01em; font-variation-settings: var(--wide); }
     .mark-glyph { width: 28px; height: 28px; border-radius: 9px; background: var(--heat); position: relative; }
     .mark-glyph::after { content: ""; position: absolute; inset: 7px; border-radius: 4px; background: var(--black); }
