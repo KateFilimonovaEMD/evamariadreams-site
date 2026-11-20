@@ -217,7 +217,12 @@
     .sev.pulsing::before { animation: ring var(--period) ease-out infinite; }
     @keyframes breathe { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
     @keyframes ring { 0% { box-shadow: 0 0 0 0 var(--c), 0 0 10px var(--c); } 70% { box-shadow: 0 0 0 7px transparent, 0 0 10px var(--c); } 100% { box-shadow: 0 0 0 0 transparent, 0 0 10px var(--c); } }
-    @media (prefers-reduced-motion: reduce) { .check::after, .check .sev::before { animation: none !important; } }
+    /* With reduced motion the glow still breathes (brightness only, nothing moves); the expanding ring becomes a brightness pulse. */
+    @keyframes glowdot { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+    @media (prefers-reduced-motion: reduce) {
+      .check.sev-critical::after, .check.sev-warning::after { animation-duration: calc(var(--period) * 1.6); }
+      .check.sev-critical .sev::before, .check.sev-warning .sev::before, .sev.pulsing::before { animation: glowdot calc(var(--period) * 1.6) ease-in-out infinite; }
+    }
     .check-detail { color: var(--ash); font-size: 14px; }
     .check-go { color: var(--ash-2); font-size: 13px; white-space: nowrap; }
 
