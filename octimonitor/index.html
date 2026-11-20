@@ -203,6 +203,21 @@
     .sev { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 700; }
     .sev::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 10px var(--c); }
     .check-title { font-weight: 600; }
+    /* Findings breathe: a soft glow from the left edge and a ring around the dot. Critical pulses faster and warmer. */
+    .check.sev-critical, .check.sev-warning { overflow: hidden; }
+    .check.sev-critical::after, .check.sev-warning::after {
+      content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+      background: radial-gradient(120% 140% at 0% 50%, var(--glow), transparent 55%);
+      opacity: .35; animation: breathe var(--period) ease-in-out infinite;
+    }
+    .check.sev-critical { --glow: rgba(255, 61, 0, 0.22); --period: 2.2s; box-shadow: inset 0 0 0 1px rgba(255, 61, 0, 0.18), inset 0 1px 0 rgba(255,247,238,.06); }
+    .check.sev-warning { --glow: rgba(255, 176, 32, 0.14); --period: 3.6s; }
+    .check { position: relative; }
+    .check.sev-critical .sev::before, .check.sev-warning .sev::before { animation: ring var(--period) ease-out infinite; }
+    .sev.pulsing::before { animation: ring var(--period) ease-out infinite; }
+    @keyframes breathe { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
+    @keyframes ring { 0% { box-shadow: 0 0 0 0 var(--c), 0 0 10px var(--c); } 70% { box-shadow: 0 0 0 7px transparent, 0 0 10px var(--c); } 100% { box-shadow: 0 0 0 0 transparent, 0 0 10px var(--c); } }
+    @media (prefers-reduced-motion: reduce) { .check::after, .check .sev::before { animation: none !important; } }
     .check-detail { color: var(--ash); font-size: 14px; }
     .check-go { color: var(--ash-2); font-size: 13px; white-space: nowrap; }
 
@@ -757,8 +772,10 @@
       const sum = $("checkSummary");
       if (!list.length) { sum.textContent = "All checks passing"; sum.style.setProperty("--c", WHITE); }
       else { sum.textContent = [crit && `${crit} critical`, warn && `${warn} warning${warn === 1 ? "" : "s"}`].filter(Boolean).join(", "); sum.style.setProperty("--c", crit ? FIRE : AMBER); }
+      sum.classList.toggle("pulsing", list.length > 0);
+      sum.style.setProperty("--period", crit ? "2.2s" : "3.6s");
       $("checks").innerHTML = list.length
-        ? list.map((c, i) => `<li class="check clickable" tabindex="0" data-i="${i}"><span class="sev" style="--c:${SEV[c.sev][1]}">${SEV[c.sev][0]}</span><span><div class="check-title">${esc(c.title)}</div><div class="check-detail">${esc(c.detail)}</div></span><span class="check-go">Inspect</span></li>`).join("")
+        ? list.map((c, i) => `<li class="check clickable sev-${c.sev}" tabindex="0" data-i="${i}"><span class="sev" style="--c:${SEV[c.sev][1]}">${SEV[c.sev][0]}</span><span><div class="check-title">${esc(c.title)}</div><div class="check-detail">${esc(c.detail)}</div></span><span class="check-go">Inspect</span></li>`).join("")
         : `<li class="check"><span class="sev" style="--c:${WHITE}">Passing</span><span><div class="check-title">Within budget</div><div class="check-detail">Every material fits the GPU budget, hitches are under 5 ms/s and no regression against the previous build.</div></span><span></span></li>`;
       $("checks").querySelectorAll(".check.clickable").forEach(el => {
         const go = () => {
