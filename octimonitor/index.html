@@ -195,6 +195,35 @@
     .app-card-foot { margin-top: 12px; font-size: 13px; color: var(--ash); display: flex; justify-content: space-between; gap: 8px; }
     .combined-note { display: inline-block; margin-left: 8px; font-size: 12px; font-weight: 500; color: var(--amber); font-family: var(--text); letter-spacing: 0; vertical-align: middle; }
 
+    /* Material x device matrix */
+    .matrix-wrap { overflow-x: auto; margin: 6px -4px 0; padding: 4px; }
+    .matrix { display: grid; gap: 10px; align-items: stretch; min-width: max-content; }
+    .mx-head, .mx-dev { font-size: 13px; font-weight: 600; color: var(--white); background: none; border: 0; cursor: pointer; padding: 4px 6px; border-radius: 10px; text-align: center; transition: color .2s, background .2s; }
+    .mx-dev { text-align: left; display: flex; align-items: center; }
+    .mx-head:hover, .mx-dev:hover { background: rgba(255,247,238,.06); }
+    .mx-head.on, .mx-dev.on { color: var(--amber); }
+    .mx-cell { position: relative; text-align: left; color: var(--white); cursor: pointer; border: 0; border-radius: 16px; padding: 12px 14px 12px; min-height: 92px;
+      background: linear-gradient(140deg, rgba(var(--rgb), .30), rgba(var(--rgb), .07) 60%, rgba(255,247,238,.02));
+      box-shadow: inset 0 0 0 1px rgba(var(--rgb), .38), inset 0 1px 0 rgba(255,247,238,.10);
+      transition: transform .45s var(--spring), opacity .3s ease, box-shadow .3s ease; }
+    .mx-cell:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1px rgba(var(--rgb), .7), 0 10px 26px -12px rgba(var(--rgb), .7); }
+    .mx-cell.dim { opacity: .3; }
+    .mx-cell.sel { box-shadow: inset 0 0 0 2px rgba(255,247,238,.9), 0 10px 30px -10px rgba(var(--rgb), .8); }
+    .mx-val { font-family: var(--display); font-size: 24px; font-weight: 700; font-variation-settings: var(--wide); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; line-height: 1.1; }
+    .mx-val small { font-family: var(--text); font-size: 12px; font-weight: 600; color: var(--ash); margin-left: 3px; letter-spacing: 0; }
+    .mx-bar { position: relative; display: block; height: 5px; margin-top: 10px; border-radius: 999px; background: rgba(255,247,238,.08); overflow: hidden; }
+    .mx-bar i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: linear-gradient(90deg, #ffd08a, #ff8a2a 60%, #ff3d00); }
+    .mx-meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 7px; font-size: 12px; color: var(--ash); font-variant-numeric: tabular-nums; }
+    .mx-over { color: #ff7a4a; font-weight: 700; }
+    .mx-empty { border-radius: 16px; min-height: 92px; display: grid; place-items: center; color: var(--ash-2); font-size: 12px; box-shadow: inset 0 0 0 1px rgba(255,247,238,.06); background: repeating-linear-gradient(135deg, rgba(255,247,238,.025) 0 8px, transparent 8px 16px); }
+    .mx-name { display: block; font-size: 12px; font-weight: 600; color: var(--ash); margin-bottom: 4px; }
+    .matrix.compact { min-width: 0; grid-template-columns: 1fr 1fr !important; gap: 8px; }
+    .matrix.compact .mx-dev { grid-column: 1 / -1; padding: 10px 2px 2px; font-size: 14px; }
+    .matrix.compact .mx-cell, .matrix.compact .mx-empty { min-height: 0; padding: 10px 12px; }
+    .matrix.compact .mx-val { font-size: 20px; }
+    .mx-legend { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px; font-size: 12px; color: var(--ash); }
+    .mx-legend span.scale { width: 180px; height: 6px; border-radius: 999px; background: linear-gradient(90deg, rgb(255,214,150), rgb(255,170,40) 50%, rgb(255,100,30) 80%, rgb(255,45,0)); }
+
     /* Health checks */
     .checks { list-style: none; margin: 14px 0 0; padding: 0; display: grid; gap: 8px; }
     .check { display: grid; grid-template-columns: 92px 1fr auto; align-items: center; gap: 14px; padding: 13px 16px; border-radius: 16px; background: rgba(255, 247, 238, 0.035); box-shadow: inset 0 1px 0 rgba(255,247,238,.06); transition: transform .45s var(--spring), background .25s ease; }
@@ -470,8 +499,9 @@
       <section class="grid">
         <article class="panel glass" id="pHeatmap">
           <h2>Material × device<span class="combined-note" data-combined hidden>all apps combined</span></h2>
-          <p class="note">GPU time p95 in milliseconds for each material on each phone model seen. Click a cell, a material or a phone to inspect it.</p>
-          <div class="chart" id="cHeat" role="img" aria-label="Heatmap of GPU time by material and device"></div>
+          <p class="note">GPU time p95 for each material on each phone model seen, and how much of the 16.7&nbsp;ms frame it uses. Click a tile, a material or a phone to inspect it.</p>
+          <div class="matrix-wrap"><div class="matrix" id="cHeat" role="grid" aria-label="GPU time by material and device"></div></div>
+          <div class="mx-legend" aria-hidden="true"><span>headroom</span><span class="scale"></span><span>over budget</span></div>
         </article>
       </section>
 
@@ -913,42 +943,51 @@
       bindPicks($("scenesTable"));
     }
 
+    // Colour by share of the 60 fps frame, so the colour means the same thing on every page and range
+    function heatRgb(share) {
+      const stops = [[0, [255, 214, 150]], [0.5, [255, 170, 40]], [0.8, [255, 100, 30]], [1, [255, 45, 0]]];
+      const t = Math.min(1, Math.max(0, share));
+      for (let i = 1; i < stops.length; i++) {
+        if (t <= stops[i][0]) {
+          const [t0, c0] = stops[i - 1], [t1, c1] = stops[i], k = (t - t0) / (t1 - t0);
+          return c0.map((v, j) => Math.round(v + (c1[j] - v) * k)).join(",");
+        }
+      }
+      return stops[stops.length - 1][1].join(",");
+    }
+
     function renderHeat() {
-      const c = chart("cHeat"); if (!c) return;
+      const box = $("cHeat");
       const cells = state.data.device_scene || [];
       const scenes = [...new Set(cells.map(r => r.scene))].sort();
       const devices = [...new Set(cells.map(r => r.device))].sort();
-      const max = Math.max(1, ...cells.map(r => r.gpu_p95 || 0));
       const { scene: ps, device: pd } = state.sel;
-      $("cHeat").style.height = Math.max(200, devices.length * 48 + 90) + "px";
-      c.resize();
-      const data = cells.map(r => {
-        const v = r.gpu_p95 || 0;
-        const on = (!ps || r.scene === ps) && (!pd || r.device === pd);
-        return { value: [scenes.indexOf(r.scene), devices.indexOf(r.device), v], scene: r.scene, device: r.device,
-                 label: { color: v / max > 0.7 ? "#1a0a02" : WHITE }, itemStyle: { opacity: on ? 1 : 0.22 },
-                 frames: r.frames, frame_p95: r.frame_p95 };
-      });
-      apply(c, Object.assign(base(), {
-        grid: { left: 4, right: 4, top: 6, bottom: 54, containLabel: true },
-        tooltip: tooltip({ trigger: "item", formatter: p => p.componentType !== "series" ? "" :
-          `<b>${esc(p.data.scene)}</b> on ${esc(deviceName(p.data.device))}<br>GPU p95 <b>${fmt(p.value[2])} ms</b><br><span style="color:${ASH}">Frame p95 ${fmt(p.data.frame_p95)} ms, ${int(p.data.frames)} frames</span><br><span style="color:${AMBER}">Click to inspect</span>` }),
-        xAxis: catAxis({ data: scenes, triggerEvent: true, axisLine: { show: false }, axisLabel: { color: WHITE, interval: 0, rotate: scenes.length > 6 ? 30 : 0 } }),
-        yAxis: catAxis({ data: devices.map(deviceName), triggerEvent: true, axisLine: { show: false }, axisLabel: { color: WHITE } }),
-        visualMap: { min: 0, max, calculable: false, orient: "horizontal", left: "center", bottom: 0, itemWidth: 12, itemHeight: 220,
-                     text: [`${fmt(max)} ms`, "0"], textStyle: { color: ASH }, inRange: { color: HEAT_RAMP } },
-        series: [{ type: "heatmap", data, cursor: "pointer", label: { show: true, formatter: p => fmt(p.value[2]), fontSize: 13, fontWeight: 600 },
-                   animationDelay: i => i * 25,
-                   itemStyle: { borderColor: "rgba(0,0,0,0.85)", borderWidth: 4, borderRadius: 12 },
-                   emphasis: { itemStyle: { borderColor: WHITE, borderWidth: 1, shadowBlur: 22, shadowColor: "rgba(255,176,32,.7)" } } }]
-      }), cells.length !== (c.__n || 0));
-      c.__n = cells.length;
-      c.off("click");
-      c.on("click", p => {
-        if (p.componentType === "series") select({ scene: p.data.scene, device: p.data.device });
-        else if (p.componentType === "xAxis") select({ scene: p.value, device: null });
-        else if (p.componentType === "yAxis") { const id = devices[devices.map(deviceName).indexOf(p.value)]; select({ scene: null, device: id }); }
-      });
+      const kfmt = n => n >= 1000 ? `${fmt(n / 1000, n >= 10000 ? 0 : 1)}k` : int(n);
+      // Phones get one block per device with tiles in two columns; wider screens get the full grid.
+      const compact = innerWidth < 600;
+      box.classList.toggle("compact", compact);
+      box.style.gridTemplateColumns = compact ? "" : `minmax(110px, auto) repeat(${scenes.length}, minmax(150px, 1fr))`;
+      let html = compact ? "" : `<span></span>` + scenes.map(sc => `<button type="button" class="mx-head${ps === sc ? " on" : ""}" data-scene="${esc(sc)}">${esc(sc)}</button>`).join("");
+      for (const dv of devices) {
+        html += `<button type="button" class="mx-dev${pd === dv ? " on" : ""}" data-device="${esc(dv)}">${esc(deviceName(dv))}</button>`;
+        for (const sc of scenes) {
+          const c = cells.find(r => r.scene === sc && r.device === dv);
+          if (!c) { if (!compact) html += `<div class="mx-empty">not played</div>`; continue; }
+          const share = (c.gpu_p95 || 0) / BUDGET_MS;
+          const on = (!ps || sc === ps) && (!pd || dv === pd);
+          const sel = ps === sc && pd === dv;
+          html += `<button type="button" class="mx-cell${on ? "" : " dim"}${sel ? " sel" : ""}" style="--rgb:${heatRgb(share)}" data-scene="${esc(sc)}" data-device="${esc(dv)}"
+              aria-label="${esc(sc)} on ${esc(deviceName(dv))}: GPU ${fmt(c.gpu_p95)} ms, ${fmt(share * 100, 0)}% of the frame">
+            ${compact ? `<span class="mx-name">${esc(sc)}</span>` : ""}<span class="mx-val">${fmt(c.gpu_p95)}<small>ms GPU</small></span>
+            <span class="mx-bar"><i style="width:${Math.min(100, share * 100)}%"></i></span>
+            <span class="mx-meta"><span class="${share > 1 ? "mx-over" : ""}">${share > 1 ? "over budget" : fmt(share * 100, 0) + "% of frame"}</span>${compact ? "" : `<span>${kfmt(c.frames || 0)} frames</span>`}</span>
+          </button>`;
+        }
+      }
+      box.innerHTML = html;
+      box.querySelectorAll(".mx-cell").forEach(b => b.addEventListener("click", () => select({ scene: b.dataset.scene, device: b.dataset.device })));
+      box.querySelectorAll(".mx-head").forEach(b => b.addEventListener("click", () => select({ scene: b.dataset.scene, device: null })));
+      box.querySelectorAll(".mx-dev").forEach(b => b.addEventListener("click", () => select({ scene: null, device: b.dataset.device })));
     }
 
     function renderMinutes(rows) {
@@ -1192,6 +1231,8 @@
       });
     }
     addEventListener("resize", phasePipeline);
+    let wasCompact = innerWidth < 600;
+    addEventListener("resize", () => { const c = innerWidth < 600; if (c !== wasCompact && state.data) { wasCompact = c; renderHeat(); } });
     (document.fonts ? document.fonts.ready : Promise.resolve()).then(phasePipeline);
     phasePipeline();
     requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add("ready")));
