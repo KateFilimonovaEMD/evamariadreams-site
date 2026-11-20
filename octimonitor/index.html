@@ -87,6 +87,82 @@
     @keyframes flash { 0% { color: #ffb020; text-shadow: 0 0 18px rgba(255,176,32,.6); } 100% { text-shadow: 0 0 0 transparent; } }
     @media (prefers-reduced-motion: reduce) { .flash { animation: none; } }
     :focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; border-radius: 6px; }
+
+    /* ---------- 2026 layer: scroll-driven entrances, specular light, scroll progress, command menu ---------- */
+
+    /* Sections rise in as they enter the viewport, driven by scroll position on the compositor (no JS). */
+    @supports (animation-timeline: view()) {
+      @media (prefers-reduced-motion: no-preference) {
+        #content > section:not(.reveal), #content ~ section {
+          animation: rise linear both;
+          animation-timeline: view();
+          animation-range: entry 0% entry 55%;
+        }
+      }
+    }
+    @keyframes rise { from { opacity: 0; transform: translateY(36px) scale(.965); } to { opacity: 1; transform: none; } }
+
+    /* Specular light: a soft highlight follows the pointer across glass surfaces, like light on Liquid Glass. */
+    .panel.glass::after, .strip.glass::after, .gauge.glass::after {
+      content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; z-index: 0;
+      background: radial-gradient(520px circle at var(--mx, 50%) var(--my, -40%), rgba(255, 190, 130, 0.11), rgba(255, 140, 60, 0.04) 35%, transparent 62%);
+      opacity: 0; transition: opacity .5s ease;
+    }
+    .panel.glass > *, .strip.glass > *, .gauge.glass > * { position: relative; z-index: 1; }
+    @media (hover: hover) and (pointer: fine) {
+      .lit::after { opacity: 1; }
+    }
+
+    /* Reading progress: a hairline in the top bar that fills as the page scrolls. */
+    .progress { position: absolute; left: 22px; right: 22px; bottom: 0; height: 2px; border-radius: 2px; pointer-events: none; opacity: 0;
+      background: linear-gradient(90deg, #ff3d00, #ff5a1f 40%, #ffb020 80%, #fff1d6); transform-origin: left; transform: scaleX(0); transition: opacity .3s ease; }
+    .topbar.condensed .progress { opacity: .9; }
+    @supports (animation-timeline: scroll()) {
+      .progress { animation: progress linear both; animation-timeline: scroll(root); }
+    }
+    @keyframes progress { to { transform: scaleX(1); } }
+
+    /* Command menu button */
+    .cmd-btn { display: inline-flex; align-items: center; gap: 10px; color: var(--ash); border: 0; cursor: pointer; font: inherit; font-size: 14px;
+      border-radius: 999px; padding: 8px 10px 8px 14px; transition: transform .35s var(--spring), color .2s ease; }
+    .cmd-btn:hover { color: var(--white); }
+    .cmd-btn:active { transform: scale(.96); }
+    .cmd-btn svg { width: 15px; height: 15px; flex: none; }
+    @media (hover: none) { .cmd-kbd, .cmdk-foot { display: none; } }
+    kbd { font: 600 11px/1 var(--text); color: var(--ash); padding: 4px 6px; border-radius: 6px; background: rgba(255,247,238,.08); box-shadow: inset 0 0 0 1px rgba(255,247,238,.1); }
+
+    /* Command menu */
+    .cmdk { position: fixed; inset: 0; margin: 0; max-width: none; max-height: none; width: 100%; height: 100%; padding: 12vh 16px 16px; border: 0; background: transparent; color: var(--white); }
+    .cmdk::backdrop { background: rgba(0, 0, 0, 0.55); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); opacity: 0; transition: opacity .25s ease, display .25s allow-discrete, overlay .25s allow-discrete; }
+    .cmdk[open]::backdrop { opacity: 1; }
+    @starting-style { .cmdk[open]::backdrop { opacity: 0; } }
+    .cmdk-panel { width: min(620px, 100%); margin: 0 auto; border-radius: 26px; overflow: hidden;
+      background: linear-gradient(180deg, rgba(40, 34, 29, 0.82), rgba(20, 17, 15, 0.86));
+      transform-origin: 50% 0; transition: transform .5s var(--spring), opacity .25s ease, display .5s allow-discrete, overlay .5s allow-discrete; }
+    .cmdk:not([open]) .cmdk-panel { opacity: 0; transform: translateY(-10px) scale(.96); }
+    @starting-style { .cmdk[open] .cmdk-panel { opacity: 0; transform: translateY(-10px) scale(.96); } }
+    .cmdk-input { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-bottom: 1px solid rgba(255,247,238,.08); }
+    .cmdk-input svg { width: 18px; height: 18px; color: var(--ash); flex: none; }
+    .cmdk-input input { flex: 1; min-width: 0; background: none; border: 0; outline: 0; color: var(--white); font: inherit; font-size: 17px; }
+    .cmdk-input input::placeholder { color: var(--ash-2); }
+    .cmdk-list { list-style: none; margin: 0; padding: 8px; max-height: min(52vh, 440px); overflow-y: auto; overscroll-behavior: contain; }
+    .cmdk-group { padding: 10px 12px 4px; font-size: 12px; color: var(--ash-2); }
+    .cmdk-item { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 12px; border-radius: 14px; cursor: pointer; font-size: 15px; color: #e6dcd1; }
+    .cmdk-item small { color: var(--ash-2); font-size: 12px; white-space: nowrap; }
+    .cmdk-item[aria-selected="true"] { color: var(--white); background: linear-gradient(90deg, rgba(255, 90, 31, 0.22), rgba(255, 90, 31, 0.06)); box-shadow: inset 0 0 0 1px rgba(255, 140, 60, 0.25); }
+    .cmdk-item mark { background: none; color: var(--amber); }
+    .cmdk-empty { padding: 22px 12px; color: var(--ash); text-align: center; }
+    .cmdk-foot { display: flex; gap: 16px; padding: 10px 20px; border-top: 1px solid rgba(255,247,238,.08); font-size: 12px; color: var(--ash-2); }
+    .cmdk-foot span { display: inline-flex; align-items: center; gap: 6px; }
+    @media (prefers-reduced-motion: reduce) { .cmdk-panel, .cmdk::backdrop { transition: none; } }
+
+    /* First load: values shimmer instead of showing dashes */
+    body.loading .strip .num, body.loading #gValue .gauge-empty { color: transparent; border-radius: 10px;
+      background: linear-gradient(90deg, rgba(255,247,238,.05) 20%, rgba(255,247,238,.13) 50%, rgba(255,247,238,.05) 80%) 0 0 / 300% 100%;
+      animation: shimmer 1.4s ease-in-out infinite; }
+    body.loading .strip .num { min-width: 3.2ch; }
+    @keyframes shimmer { from { background-position: 100% 0; } to { background-position: 0 0; } }
+    @media (prefers-reduced-motion: reduce) { body.loading .strip .num, body.loading #gValue .gauge-empty { animation: none; } }
     .wrap { width: min(1200px, calc(100% - 48px)); margin: 0 auto; }
     .num { font-variant-numeric: tabular-nums; }
 
@@ -414,21 +490,32 @@
       .panel-head .seg { margin-top: 0; }
       .bar { flex-wrap: nowrap; }
       .bar .ghost { display: none; }
+      .cmd-label, .cmd-kbd { display: none; }
+      .cmd-btn { padding: 10px; color: var(--white); }
       #updated { display: none; }
     }
   </style>
 </head>
-<body>
+<body class="loading">
+  <dialog class="cmdk" id="cmdk" aria-label="Search and commands">
+    <div class="cmdk-panel glass">
+      <div class="cmdk-input"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><input id="cmdkInput" type="text" placeholder="Search or jump to…" autocomplete="off" spellcheck="false" role="combobox" aria-expanded="true" aria-controls="cmdkList" aria-autocomplete="list"></div>
+      <ul class="cmdk-list" id="cmdkList" role="listbox" aria-label="Commands"></ul>
+      <div class="cmdk-foot"><span><kbd>↑</kbd><kbd>↓</kbd> move</span><span><kbd>↵</kbd> run</span><span><kbd>esc</kbd> close</span></div>
+    </div>
+  </dialog>
   <div class="ambient" aria-hidden="true"><i></i><i></i><i></i></div>
   <div class="wrap">
     <div class="topbar" id="topbar"><header class="bar glass">
       <span class="mark"><span class="mark-glyph" aria-hidden="true"></span>OctiMonitor</span>
       <div class="bar-right">
+        <button class="cmd-btn glass" id="cmdOpen" type="button" aria-label="Search and commands" aria-keyshortcuts="Meta+K Control+K /"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="cmd-label">Search</span><kbd class="cmd-kbd">⌘K</kbd></button>
         <a class="ghost glass" href="docs/">How it works</a>
         <button class="ghost glass" id="share" type="button">Copy link to this view</button>
         <button class="ghost glass" id="export" type="button" disabled>Export CSV</button>
         <span class="live glass" id="live"><span class="dot" aria-hidden="true"></span><b id="liveText">Connecting</b><span id="updated" aria-live="polite"></span></span>
       </div>
+      <span class="progress" aria-hidden="true"></span>
     </header></div>
 
     <section class="hero">
@@ -776,11 +863,13 @@
         if (seq !== requestSeq) return;            // a newer request (range or app change) superseded this one
         state.data = data;
         state.lastOk = Date.now();
+        document.body.classList.remove("loading");
         $("error").hidden = true;
         render(state.data);
         if (manual) toast("Refreshed");
       } catch (e) {
         if (seq !== requestSeq) return;
+        document.body.classList.remove("loading");
         $("error").hidden = false;
         $("errorText").textContent = e.message || "";
       }
@@ -886,7 +975,7 @@
         if (c.frame_p95 > 25 && (c.frames || 0) > 300) out.push({ sev: "warning", title: `${c.scene} on ${deviceName(c.device)}`, detail: `Frame p95 ${fmt(c.frame_p95)} ms on this phone.`, scene: c.scene, device: c.device });
       }
       const hot = (d.session_minutes || []).filter(r => r.hot_share >= 0.3);
-      if (hot.length) out.push({ sev: "warning", title: "Phones heat up during play", detail: `From minute ${hot[0].minute}, ${fmt(hot[0].hot_share * 100, 0)}% of sessions report serious heat.`, go: "pHeat" });
+      if (hot.length) out.push({ sev: "warning", title: "Phones heat up during use", detail: `From minute ${hot[0].minute}, ${fmt(hot[0].hot_share * 100, 0)}% of sessions report serious heat.`, go: "pHeat" });
       const pair = latestPair(d.versions || []);
       if (pair) {
         const [prev, cur] = pair;
@@ -1289,7 +1378,7 @@
     });
     document.addEventListener("keydown", e => {
       if (e.target.closest("input, select, textarea")) return;
-      if (e.key === "Escape" && (state.sel.scene || state.sel.device)) select({});
+      if (e.key === "Escape" && !cmdk.open && (state.sel.scene || state.sel.device)) select({});
       if ((e.key === "r" || e.key === "R") && !e.metaKey && !e.ctrlKey) refresh(true);
     });
 
@@ -1323,6 +1412,101 @@
     addEventListener("resize", () => { const c = innerWidth < 600; if (c !== wasCompact && state.data) { wasCompact = c; renderHeat(); } });
     (document.fonts ? document.fonts.ready : Promise.resolve()).then(phasePipeline);
     phasePipeline();
+
+    // ---------- Specular light: the highlight follows the pointer over glass surfaces ----------
+    if (matchMedia("(hover: hover) and (pointer: fine)").matches) {
+      let litEl = null, raf = 0, px = 0, py = 0;
+      const paint = () => {
+        raf = 0;
+        const el = document.elementFromPoint(px, py)?.closest(".panel.glass, .strip.glass, .gauge.glass") || null;
+        if (el !== litEl) { litEl?.classList.remove("lit"); litEl = el; el?.classList.add("lit"); }
+        if (!el) return;
+        const r = el.getBoundingClientRect();
+        el.style.setProperty("--mx", `${px - r.left}px`); el.style.setProperty("--my", `${py - r.top}px`);
+      };
+      addEventListener("pointermove", e => { px = e.clientX; py = e.clientY; if (!raf) raf = requestAnimationFrame(paint); }, { passive: true });
+      document.addEventListener("pointerleave", () => { litEl?.classList.remove("lit"); litEl = null; });
+    }
+
+    // ---------- Command menu: ⌘K / Ctrl+K / "/" ----------
+    const cmdk = $("cmdk"), cmdkInput = $("cmdkInput"), cmdkList = $("cmdkList");
+    const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
+    if (!isMac) document.querySelector(".cmd-kbd").textContent = "Ctrl K";
+    let cmdItems = [], cmdActive = 0;
+    const goTo = id => { const el = $(id); if (!el || el.closest("[hidden]")) return; el.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "start" }); };
+    function commands() {
+      const d = state.data || {};
+      const list = [];
+      const add = (group, label, run, hint = "") => list.push({ group, label, run, hint });
+      [["pChecks", "Health checks"], ["pTimeline", "Over time"], ["pMaterials", "GPU cost per scene"], ["pHeatmap", "Scene × device"],
+       ["pHeat", "Heat over a session"], ["pCompare", "Build comparison"], ["recentTable", "Latest reports"]]
+        .forEach(([id, name]) => { if ($(id) && !$(id).closest("[hidden]")) add("Go to", name, () => goTo(id)); });
+      if (!$("appsSection").hidden) add("Go to", "Apps", () => goTo("appsSection"));
+      [["1", "Last hour"], ["24", "Last 24 hours"], ["168", "Last 7 days"], ["720", "Last 30 days"]]
+        .forEach(([h, name]) => add("Range", name, () => $("range").querySelector(`[data-hours="${h}"]`).click(), Number(h) === state.hours ? "current" : ""));
+      [["frame_p95", "Frame time p95"], ["fps", "Frame rate"], ["hitch", "Hitch time"]]
+        .forEach(([m, name]) => add("Chart", `Show ${name.toLowerCase()} over time`, () => { setMetric(m); goTo("pTimeline"); }, m === state.metric ? "current" : ""));
+      const apps = d.apps || [];
+      if (apps.length > 1 || state.app) {
+        add("App", "All apps", () => { $("app").value = ""; $("app").dispatchEvent(new Event("change")); }, state.app ? "" : "current");
+        apps.forEach(a => add("App", appName(a), () => { $("app").value = a; $("app").dispatchEvent(new Event("change")); }, a === state.app ? "current" : ""));
+      }
+      (d.scenes || []).forEach(sc => add("Inspect scene", sc.scene, () => { select({ scene: sc.scene }); goTo("inspector"); }, sc.gpu_p95 > 0 ? `GPU ${fmt(sc.gpu_p95)} ms` : ""));
+      [...new Set((d.device_scene || []).map(c => c.device))].forEach(dv => add("Inspect phone", deviceName(dv), () => { select({ device: dv }); goTo("inspector"); }));
+      add("Actions", "Refresh now", () => refresh(true), "R");
+      add("Actions", "Copy link to this view", () => $("share").click());
+      if (!$("export").disabled) add("Actions", "Export CSV", exportCsv);
+      add("Actions", "How every number is measured", () => { location.href = "docs/"; });
+      return list;
+    }
+    function highlight(text, words) {
+      let out = esc(text);
+      for (const w of words) if (w) out = out.replace(new RegExp(`(${w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")})`, "i"), "<mark>$1</mark>");
+      return out;
+    }
+    function renderCmds() {
+      const q = cmdkInput.value.trim().toLowerCase();
+      const words = q.split(/\s+/).filter(Boolean);
+      cmdItems = commands().filter(c => words.every(w => `${c.group} ${c.label}`.toLowerCase().includes(w)));
+      cmdActive = Math.min(cmdActive, Math.max(0, cmdItems.length - 1));
+      if (!cmdItems.length) { cmdkList.innerHTML = `<li class="cmdk-empty">Nothing matches “${esc(cmdkInput.value)}”.</li>`; cmdkInput.removeAttribute("aria-activedescendant"); return; }
+      let html = "", group = "";
+      cmdItems.forEach((c, i) => {
+        if (c.group !== group) { group = c.group; html += `<li class="cmdk-group" role="presentation">${esc(group)}</li>`; }
+        html += `<li class="cmdk-item" id="cmd-${i}" role="option" data-i="${i}" aria-selected="${i === cmdActive}"><span>${highlight(c.label, words)}</span>${c.hint ? `<small>${esc(c.hint)}</small>` : ""}</li>`;
+      });
+      cmdkList.innerHTML = html;
+      cmdkInput.setAttribute("aria-activedescendant", `cmd-${cmdActive}`);
+    }
+    function moveCmd(to) {
+      if (!cmdItems.length) return;
+      cmdActive = (to + cmdItems.length) % cmdItems.length;
+      cmdkList.querySelectorAll(".cmdk-item").forEach(li => li.setAttribute("aria-selected", String(Number(li.dataset.i) === cmdActive)));
+      cmdkInput.setAttribute("aria-activedescendant", `cmd-${cmdActive}`);
+      $(`cmd-${cmdActive}`)?.scrollIntoView({ block: "nearest" });
+    }
+    function runCmd(i) { const c = cmdItems[i]; if (!c) return; closeCmdk(); setTimeout(c.run, 0); }
+    function openCmdk() {
+      if (cmdk.open) return;
+      cmdkInput.value = ""; cmdActive = 0; renderCmds();
+      if (cmdk.showModal) cmdk.showModal(); else cmdk.setAttribute("open", "");
+      cmdkInput.focus();
+    }
+    function closeCmdk() { if (cmdk.open) { cmdk.close ? cmdk.close() : cmdk.removeAttribute("open"); } }
+    $("cmdOpen").addEventListener("click", openCmdk);
+    cmdkInput.addEventListener("input", () => { cmdActive = 0; renderCmds(); });
+    cmdkInput.addEventListener("keydown", e => {
+      if (e.key === "ArrowDown") { e.preventDefault(); moveCmd(cmdActive + 1); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); moveCmd(cmdActive - 1); }
+      else if (e.key === "Enter") { e.preventDefault(); runCmd(cmdActive); }
+    });
+    cmdkList.addEventListener("pointermove", e => { const li = e.target.closest(".cmdk-item"); if (li && Number(li.dataset.i) !== cmdActive) moveCmd(Number(li.dataset.i)); });
+    cmdkList.addEventListener("click", e => { const li = e.target.closest(".cmdk-item"); if (li) runCmd(Number(li.dataset.i)); });
+    cmdk.addEventListener("click", e => { if (e.target === cmdk) closeCmdk(); });   // a tap outside the panel closes it
+    document.addEventListener("keydown", e => {
+      if ((e.key === "k" || e.key === "K") && (e.metaKey || e.ctrlKey)) { e.preventDefault(); cmdk.open ? closeCmdk() : openCmdk(); return; }
+      if (e.key === "/" && !cmdk.open && !e.target.closest("input, select, textarea")) { e.preventDefault(); openCmdk(); }
+    });
     requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add("ready")));
     refresh();
     schedule();

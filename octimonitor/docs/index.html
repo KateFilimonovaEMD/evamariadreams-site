@@ -112,6 +112,21 @@
     .flow li::before { content: counter(step); position: absolute; left: 16px; top: 14px; width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center; font-weight: 700; font-size: 13px; color: var(--black); background: linear-gradient(135deg, #fff1d6, #ffb020 60%, #ff5a1f); }
     .flow b { color: var(--white); }
 
+    /* Reading progress in the top bar, and sections that rise in as they scroll into view (no JS) */
+    .bar { position: relative; }
+    .progress { position: absolute; left: 22px; right: 22px; bottom: 0; height: 2px; border-radius: 2px; pointer-events: none;
+      background: linear-gradient(90deg, #ff3d00, #ff5a1f 40%, #ffb020 80%, #fff1d6); transform-origin: left; transform: scaleX(0); display: none; }
+    @supports (animation-timeline: scroll()) {
+      .progress { display: block; animation: progress linear both; animation-timeline: scroll(root); }
+      @media (prefers-reduced-motion: no-preference) {
+        article section, .why, .flow li, .scale div {
+          animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 45%;
+        }
+      }
+    }
+    @keyframes progress { to { transform: scaleX(1); } }
+    @keyframes rise { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
+
     footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 32px 0 48px; color: var(--ash-2); font-size: 13px; border-top: 1px solid var(--line); }
     footer a { color: var(--ash); text-decoration: none; border-bottom: 1px solid var(--line); }
     footer a:hover { color: var(--white); }
@@ -148,6 +163,7 @@
     <div class="topbar"><header class="bar glass">
       <span class="brand"><a class="mark" href="../" aria-label="OctiMonitor dashboard"><span class="mark-glyph" aria-hidden="true"></span>OctiMonitor</a><span class="page-name" aria-current="page">Documentation</span></span>
       <a class="ghost glass" href="../">Open dashboard</a>
+      <span class="progress" aria-hidden="true"></span>
     </header></div>
 
     <div class="hero">
