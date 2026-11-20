@@ -256,6 +256,7 @@
     footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 40px 0 48px; color: var(--ash-2); font-size: 13px; }
     footer a { color: var(--ash); text-decoration: none; border-bottom: 1px solid var(--line); }
     footer a:hover { color: var(--white); }
+    @media (hover: none) { .keys { display: none; } }
     kbd { font: inherit; font-size: 12px; padding: 1px 6px; border: 1px solid var(--line); border-radius: 6px; color: var(--ash); }
 
     [hidden] { display: none !important; }
@@ -280,6 +281,13 @@
       .check { grid-template-columns: 1fr; gap: 4px; }
       .check-go { display: none; }
       .rowbar { grid-template-columns: 96px 1fr 56px; }
+      .hide-sm { display: none; }
+      th, td { padding: 10px 8px; }
+      table { font-size: 13.5px; }
+      .table-wrap { margin: 4px -8px 0; }
+      .compare-controls { width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; }
+      .compare-controls .select { width: 100%; min-width: 0; padding-left: 12px; padding-right: 28px; text-overflow: ellipsis; }
+      .panel-head .seg { margin-top: 2px; }
       .bar { flex-wrap: nowrap; }
       .bar .ghost { display: none; }
       #updated { display: none; }
@@ -439,7 +447,7 @@
     </section>
 
     <footer>
-      <span>OctiMonitor by EvaMariaDreams &nbsp; <kbd>R</kbd> refresh &nbsp; <kbd>Esc</kbd> clear selection</span>
+      <span>OctiMonitor by EvaMariaDreams<span class="keys"> &nbsp; <kbd>R</kbd> refresh &nbsp; <kbd>Esc</kbd> clear selection</span></span>
       <a href="https://github.com/KateFilimonovaEMD/OctiMonitor">Source code on GitHub</a>
     </footer>
   </div>
@@ -550,7 +558,7 @@
       backgroundColor: "rgba(28,22,18,0.62)", borderColor: "rgba(255,247,238,0.16)", borderWidth: 1, padding: [10, 14],
       textStyle: { color: WHITE, fontSize: 13, fontFamily: "-apple-system, BlinkMacSystemFont, Archivo, sans-serif" },
       extraCssText: "border-radius:14px;backdrop-filter:blur(20px) saturate(170%);-webkit-backdrop-filter:blur(20px) saturate(170%);box-shadow:0 18px 40px -12px rgba(0,0,0,.7), inset 0 1px 0 rgba(255,247,238,.12);",
-      transitionDuration: 0.25
+      transitionDuration: 0.25, confine: true
     }, extra);
     const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const base = () => ({ backgroundColor: "transparent", textStyle: { fontFamily: "-apple-system, BlinkMacSystemFont, Archivo, sans-serif", color: ASH },
@@ -634,6 +642,7 @@
       renderCompare();
       renderRecent(d.recent || []);
       renderInspector();
+      placeThumbs();
       state.firstLoad = false;
     }
 
@@ -748,7 +757,7 @@
           const r = rows[p.dataIndex];
           return `<b>${esc(r.scene)}</b><br>GPU p95 <b>${fmt(r.gpu_p95)} ms</b>, p50 ${fmt(r.gpu_p50)} ms<br><span style="color:${ASH}">Frame p95 ${fmt(r.frame_p95)} ms, ${fmt(r.fps)} fps<br>Hitch ${fmt(r.hitch)} ms/s, ${int(r.dropped)} dropped</span><br><span style="color:${AMBER}">Click to inspect</span>`;
         } }),
-        xAxis: valueAxis({ min: 0, splitNumber: 4, axisLabel: lbl({ formatter: "{value} ms" }) }),
+        xAxis: valueAxis({ min: 0, splitNumber: innerWidth < 600 ? 3 : 4, axisLabel: lbl({ formatter: innerWidth < 600 ? "{value}" : "{value} ms" }) }),
         yAxis: catAxis({ data: rows.map(r => r.scene), triggerEvent: true, axisLine: { show: false },
           axisLabel: { color: WHITE, fontWeight: 500, fontSize: 13, formatter: v => pick && v !== pick ? `{dim|${v}}` : v, rich: { dim: { color: ASH2, fontSize: 13 } } } }),
         series: [{ type: "bar", data: rows.map(r => ({ value: r.gpu_p95, itemStyle: { opacity: pick && r.scene !== pick ? 0.22 : 1 } })), barMaxWidth: 20, cursor: "pointer",
@@ -839,6 +848,7 @@
 
     // ---------- inspector ----------
     function select(sel) {
+      Object.values(charts).forEach(c => c.dispatchAction({ type: "hideTip" }));
       state.sel = { scene: sel.scene || null, device: sel.device || null };
       syncUrl();
       renderScenes(); renderHeat(); renderInspector();
@@ -927,7 +937,8 @@
 
     function renderCompare() {
       const vs = sortVersions(state.data.versions || []);
-      const opts = vs.map(v => `<option value="${esc(vkey(v))}">${esc(appName(v.app))} ${esc(v.version)}</option>`).join("");
+      const oneApp = new Set(vs.map(v => v.app)).size <= 1;
+      const opts = vs.map(v => `<option value="${esc(vkey(v))}">${oneApp ? "" : esc(appName(v.app)) + " "}${esc(v.version)}</option>`).join("");
       const b = $("baseline"), c = $("candidate");
       if (b.dataset.opts !== opts) { b.innerHTML = opts; c.innerHTML = opts; b.dataset.opts = opts; }
       const keys = vs.map(vkey);
@@ -941,7 +952,7 @@
       } else {
         const rows = [["Frame rate", "fps", 1, true], ["Frame time p95", "frame_p95", 1, false], ["GPU time p95", "gpu_p95", 1, false], ["Hitch time", "hitch", 1, false], ["Sessions", "sessions", 0, null]];
         const units = { fps: "fps", frame_p95: "ms", gpu_p95: "ms", hitch: "ms/s", sessions: "" };
-        $("compareTable").innerHTML = `<thead><tr><th>Metric</th><th class="r">${esc(A.version)}</th><th class="r">${esc(B.version)}</th><th class="r">Change</th><th></th></tr></thead><tbody>` +
+        $("compareTable").innerHTML = `<thead><tr><th>Metric</th><th class="r">${esc(A.version)}</th><th class="r">${esc(B.version)}</th><th class="r">Change</th><th class="hide-sm"></th></tr></thead><tbody>` +
           rows.map(([label, k, dg, higherBetter]) => {
             const a = A[k], b2 = B[k];
             let pct = a ? (b2 - a) / a * 100 : null, cls = "same", word = "";
@@ -949,7 +960,7 @@
               const good = higherBetter ? pct > 1 : pct < -1, bad = higherBetter ? pct < -1 : pct > 1;
               cls = good ? "better" : bad ? "worse" : "same"; word = good ? "Better" : bad ? "Worse" : "Same";
             }
-            return `<tr><td>${label}</td><td class="r">${fmt(a, dg)} ${units[k]}</td><td class="r">${fmt(b2, dg)} ${units[k]}</td><td class="r"><span class="delta ${cls}">${pct === null ? "–" : (pct > 0 ? "+" : "") + fmt(pct, 1) + "%"}</span></td><td>${word ? `<span class="delta ${cls}">${word}</span>` : ""}</td></tr>`;
+            return `<tr><td>${label}</td><td class="r">${fmt(a, dg)} ${units[k]}</td><td class="r">${fmt(b2, dg)} ${units[k]}</td><td class="r"><span class="delta ${cls}">${pct === null ? "–" : (pct > 0 ? "+" : "") + fmt(pct, 1) + "%"}</span></td><td class="hide-sm">${word ? `<span class="delta ${cls}">${word}</span>` : ""}</td></tr>`;
           }).join("") + `</tbody>`;
       }
       $("versionsTable").innerHTML =
@@ -962,13 +973,13 @@
     // ---------- live feed ----------
     function renderRecent(rows) {
       const ago = iso => { const s = Math.max(0, Math.round((Date.now() - new Date(iso)) / 1000));
-        return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : new Date(iso).toLocaleDateString("en-GB"); };
+        return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.floor(s / 60)}m ago` : s < 86400 ? `${Math.floor(s / 3600)}h ago` : new Date(iso).toLocaleDateString("en-GB"); };
       const key = r => `${r.at}|${r.device}|${r.scene}`;
       $("recentTable").innerHTML =
-        `<thead><tr><th>When</th><th>Device</th><th>Material</th><th class="r">FPS</th><th class="r">Frame p95</th><th class="r">GPU p95</th><th>Heat</th><th>Build</th></tr></thead><tbody>` +
+        `<thead><tr><th>When</th><th>Device</th><th>Material</th><th class="r hide-sm">FPS</th><th class="r hide-sm">Frame p95</th><th class="r">GPU p95</th><th class="hide-sm">Heat</th><th class="hide-sm">Build</th></tr></thead><tbody>` +
         rows.slice(0, 12).map(r => { const th = THERMAL[r.thermal] || ["Unknown", ASH2];
           const fresh = !state.firstLoad && !state.seenRecent.has(key(r));
-          return `<tr class="pick${fresh ? " fresh" : ""}" data-scene="${esc(r.scene)}" data-device="${esc(r.device)}" tabindex="0"><td class="muted">${ago(r.at)}</td><td>${esc(deviceName(r.device))}</td><td>${esc(r.scene)}</td><td class="r">${fmt(r.fps)}</td><td class="r">${fmt(r.frame_p95)} ms</td><td class="r">${fmt(r.gpu_p95)} ms</td><td>${heatTag(th[0], th[1])}</td><td class="muted">${esc(r.version)}</td></tr>`; }).join("") +
+          return `<tr class="pick${fresh ? " fresh" : ""}" data-scene="${esc(r.scene)}" data-device="${esc(r.device)}" tabindex="0"><td class="muted">${ago(r.at)}</td><td>${esc(deviceName(r.device))}</td><td>${esc(r.scene)}</td><td class="r hide-sm">${fmt(r.fps)}</td><td class="r hide-sm">${fmt(r.frame_p95)} ms</td><td class="r">${fmt(r.gpu_p95)} ms</td><td class="hide-sm">${heatTag(th[0], th[1])}</td><td class="muted hide-sm">${esc(r.version)}</td></tr>`; }).join("") +
         `</tbody>`;
       rows.forEach(r => state.seenRecent.add(key(r)));
       bindPicks($("recentTable"));
