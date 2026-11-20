@@ -541,7 +541,8 @@
     const charts = {};
     function chart(id) {
       if (!window.echarts) return null;
-      if (!charts[id]) charts[id] = echarts.init($(id), null, { renderer: "svg" });
+      // Canvas at the screen's pixel ratio: glows render in full (SVG filters clip them to a tight box) and lines stay crisp.
+      if (!charts[id]) charts[id] = echarts.init($(id), null, { renderer: "canvas", devicePixelRatio: Math.max(2, window.devicePixelRatio || 1) });
       return charts[id];
     }
     window.addEventListener("resize", () => Object.values(charts).forEach(c => c.resize()));
@@ -718,7 +719,8 @@
         } }),
         dataZoom: [{ type: "inside", start: zoom.start, end: zoom.end, zoomOnMouseWheel: true, moveOnMouseMove: true }],
         xAxis: catAxis({ data: x, boundaryGap: false }),
-        yAxis: valueAxis({ min: 0, axisLabel: { color: ASH2, formatter: `{value} ${m.unit}` } }),
+        // Headroom above the highest point so the line's glow never touches the top edge
+        yAxis: valueAxis({ min: 0, max: v => Math.ceil(Math.max(v.max * 1.18, ...m.ref.map(r => r.y * 1.1))), axisLabel: { color: ASH2, formatter: `{value} ${m.unit}` } }),
         series: [{
           type: "line", data: rows.map(r => r[state.metric]), smooth: 0.45, smoothMonotone: "x", showSymbol: rows.length < 30, symbolSize: 9,
           lineStyle: Object.assign({ width: 3, color: grad([0, 0, 1, 0], [[0, AMBER], [1, EMBER]]), cap: "round", join: "round" }, glow("rgba(255,90,31,.55)", 18)),
