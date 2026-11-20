@@ -1,0 +1,514 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>OctiMonitor — live performance — EvaMariaDreams</title>
+  <meta name="description" content="Live real-user performance data from EvaMariaDreams apps: frame pacing, GPU time, heat and memory on real devices.">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="../styles.css">
+  <style>
+    .om {
+      --ink: #1d1d1f;
+      --ink-2: #6e6e73;
+      --ink-3: #86868b;
+      --grid: #e8e8ed;
+      --series: #2a78d6;
+      --budget: #86868b;
+      --good: #0ca30c;
+      --warning: #fab219;
+      --serious: #ec835a;
+      --critical: #d03b3b;
+    }
+    .om .hero-panel { padding: 56px var(--panel-pad-x) 40px; }
+    .om h1 { font-size: clamp(32px, 4.4vw, 48px); line-height: 1.08; letter-spacing: -0.03em; margin: 0 0 16px; max-width: 18ch; }
+    .om .lead { max-width: 680px; }
+    .om-status { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-top: 24px; font-size: 14px; color: var(--ink-2); }
+    .om-live { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink); }
+    .om-dot { width: 9px; height: 9px; border-radius: 50%; background: var(--ink-3); }
+    .om-live.is-live .om-dot { background: var(--good); box-shadow: 0 0 0 0 rgba(12,163,12,.5); animation: om-pulse 2s infinite; }
+    @keyframes om-pulse { 70% { box-shadow: 0 0 0 8px rgba(12,163,12,0); } 100% { box-shadow: 0 0 0 0 rgba(12,163,12,0); } }
+    @media (prefers-reduced-motion: reduce) { .om-live.is-live .om-dot { animation: none; } }
+
+    .om-filters { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+    .om-select, .om-seg button {
+      font: inherit; font-size: 14px; font-weight: 500; color: var(--ink);
+      border: 1px solid var(--line); background: #fff; border-radius: 999px; padding: 8px 14px; cursor: pointer;
+    }
+    .om-seg { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 3px; background: #fff; }
+    .om-seg button { border: 0; padding: 6px 12px; white-space: nowrap; }
+    .om-seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+    .om-select:focus-visible, .om-seg button:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+
+    .om-section { padding: 0 0 24px; }
+    .om-tiles { width: min(100%, var(--panel-width)); margin: 0 auto; display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .om-tile { background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 22px 24px; }
+    .om-tile-label { font-size: 13px; font-weight: 500; color: var(--ink-2); }
+    .om-tile-value { font-size: 34px; font-weight: 700; letter-spacing: -0.03em; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .om-tile-sub { font-size: 13px; color: var(--ink-2); margin-top: 2px; display: flex; align-items: center; gap: 6px; }
+    .om-badge { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--ink); }
+    .om-badge::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--badge, var(--ink-3)); }
+
+    .om .section-panel { padding: 32px 40px 32px; }
+    .om h2 { font-size: 22px; letter-spacing: -0.02em; margin: 0 0 4px; }
+    .om-note { font-size: 14px; color: var(--ink-2); margin: 0 0 16px; max-width: 720px; }
+    .om-chart { width: 100%; height: 300px; }
+    .om-chart.tall { height: 360px; }
+    .om-chart.short { height: 200px; }
+    .om-split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    .om-split h3 { font-size: 15px; margin: 0 0 4px; }
+
+    .om-table-wrap { overflow-x: auto; margin-top: 8px; }
+    .om table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; }
+    .om th { text-align: left; font-weight: 600; color: var(--ink-2); font-size: 12px; text-transform: none; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+    .om td { padding: 9px 10px; border-bottom: 1px solid var(--grid); white-space: nowrap; }
+    .om td.num, .om th.num { text-align: right; }
+    .om details { margin-top: 12px; }
+    .om summary { cursor: pointer; font-size: 14px; font-weight: 500; color: var(--primary); }
+
+    .om-empty, .om-error { width: min(100%, var(--panel-width)); margin: 0 auto 24px; background: var(--surface); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 28px 32px; font-size: 15px; color: var(--ink-2); }
+    .om-error { border-left: 0; color: var(--ink); }
+    .om-error strong { color: var(--critical); }
+
+    .om-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 16px; }
+    .om-step { background: var(--surface-soft); border: 1px solid var(--grid); border-radius: 18px; padding: 18px; }
+    .om-step b { display: block; font-size: 15px; margin-bottom: 6px; }
+    .om-step p { margin: 0; font-size: 14px; color: var(--ink-2); line-height: 1.5; }
+    .om-links { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+
+    [hidden] { display: none !important; }
+    @media (max-width: 860px) {
+      .om-tiles { grid-template-columns: repeat(2, 1fr); }
+      .om-split, .om-steps { grid-template-columns: 1fr; }
+      .om .hero-panel, .om .section-panel { padding-left: 24px; padding-right: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="container nav">
+      <a class="brand" href="../index.html">EvaMariaDreams</a>
+      <nav class="nav-links" aria-label="Primary">
+        <a href="../octi-flow.html">Octi Flow</a>
+        <a href="../about.html">About</a>
+        <a href="../faq.html">FAQ</a>
+        <a href="../press-kit.html">Press Kit</a>
+        <a href="../support.html">Support</a>
+        <a href="../contact.html">Contact</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="om">
+    <section class="page-hero">
+      <div class="container">
+        <section class="hero-panel">
+          <p class="eyebrow">OctiMonitor</p>
+          <h1>How our apps really run on players' phones.</h1>
+          <p class="lead">
+            Live performance data from real devices: how smooth every frame is, how hard the GPU works for each material,
+            and what happens when the phone heats up. Anonymous, aggregated, straight from the apps.
+          </p>
+          <div class="om-status">
+            <span class="om-live" id="live"><span class="om-dot" aria-hidden="true"></span><span id="liveText">Connecting…</span></span>
+            <span id="updated" aria-live="polite"></span>
+          </div>
+          <div class="om-filters">
+            <select class="om-select" id="app" aria-label="App"><option value="">All apps</option></select>
+            <div class="om-seg" role="group" aria-label="Time range" id="range">
+              <button type="button" data-hours="1" aria-pressed="false">1 hour</button>
+              <button type="button" data-hours="24" aria-pressed="true">24 hours</button>
+              <button type="button" data-hours="168" aria-pressed="false">7 days</button>
+              <button type="button" data-hours="720" aria-pressed="false">30 days</button>
+            </div>
+          </div>
+        </section>
+      </div>
+    </section>
+
+    <div class="container">
+      <div class="om-error" id="error" hidden><strong>Can't reach the data service.</strong> <span id="errorText"></span> Retrying automatically.</div>
+      <div class="om-empty" id="empty" hidden>No reports in this time range yet. Open one of the apps for a minute and the first numbers appear here within 30 seconds.</div>
+    </div>
+
+    <div id="content" hidden>
+      <section class="om-section">
+        <div class="container">
+          <div class="om-tiles">
+            <div class="om-tile"><div class="om-tile-label">Playing now</div><div class="om-tile-value" id="tLive">–</div><div class="om-tile-sub">sessions reporting in the last 2 min</div></div>
+            <div class="om-tile"><div class="om-tile-label">Sessions</div><div class="om-tile-value" id="tSessions">–</div><div class="om-tile-sub" id="tDevices">–</div></div>
+            <div class="om-tile"><div class="om-tile-label">Frames measured</div><div class="om-tile-value" id="tFrames">–</div><div class="om-tile-sub" id="tPlaytime">–</div></div>
+            <div class="om-tile"><div class="om-tile-label">Average frame rate</div><div class="om-tile-value" id="tFps">–</div><div class="om-tile-sub">frames per second, all materials</div></div>
+            <div class="om-tile"><div class="om-tile-label">Frame time p95</div><div class="om-tile-value" id="tP95">–</div><div class="om-tile-sub">95% of frames are faster than this</div></div>
+            <div class="om-tile"><div class="om-tile-label">Hitch time</div><div class="om-tile-value" id="tHitch">–</div><div class="om-tile-sub" id="tHitchSub">–</div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="om-section">
+        <div class="container">
+          <section class="section-panel">
+            <h2>Frame time over time</h2>
+            <p class="om-note">p95 frame time across all sessions. The dashed line is the 60&nbsp;fps budget (16.7&nbsp;ms): above it, players start to feel stutter.</p>
+            <div class="om-chart" id="cTimeline" role="img" aria-label="Line chart of p95 frame time over time"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="om-section">
+        <div class="container">
+          <section class="section-panel">
+            <h2>GPU time by material</h2>
+            <p class="om-note">How long the GPU works on one frame of each material (p95). This is where shader cost shows up directly.</p>
+            <div class="om-chart" id="cScenes" role="img" aria-label="Bar chart of GPU time per material"></div>
+            <details>
+              <summary>Show as table</summary>
+              <div class="om-table-wrap"><table id="scenesTable"></table></div>
+            </details>
+          </section>
+        </div>
+      </section>
+
+      <section class="om-section">
+        <div class="container">
+          <section class="section-panel">
+            <h2>Material × device</h2>
+            <p class="om-note">GPU time p95 in milliseconds for every material on every phone model seen. Darker means heavier.</p>
+            <div class="om-chart tall" id="cHeat" role="img" aria-label="Heatmap of GPU time by material and device"></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="om-section">
+        <div class="container">
+          <section class="section-panel">
+            <h2>Does it slow down as the phone heats up?</h2>
+            <p class="om-note">Every session lined up from its first minute. If performance drops while the share of hot phones rises, that is thermal throttling.</p>
+            <div class="om-split">
+              <div><h3>Hitch time, ms per second</h3><div class="om-chart short" id="cMinutesHitch" role="img" aria-label="Hitch time by minute of session"></div></div>
+              <div><h3>Phones running hot (serious or critical)</h3><div class="om-chart short" id="cMinutesHot" role="img" aria-label="Share of hot phones by minute of session"></div></div>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section class="om-section">
+        <div class="container">
+          <section class="section-panel">
+            <h2>By app version</h2>
+            <p class="om-note">Before and after: every build side by side, so a regression or an optimization is visible the day it ships.</p>
+            <div class="om-table-wrap"><table id="versionsTable"></table></div>
+          </section>
+        </div>
+      </section>
+
+      <section class="om-section">
+        <div class="container">
+          <section class="section-panel">
+            <h2>Latest reports</h2>
+            <p class="om-note">Each row is one 30-second window from a real device, showing the material played most in it.</p>
+            <div class="om-table-wrap"><table id="recentTable"></table></div>
+          </section>
+        </div>
+      </section>
+    </div>
+
+    <section class="om-section">
+      <div class="container">
+        <section class="section-panel">
+          <h2>How it works</h2>
+          <p class="om-note">OctiMonitor is our own monitoring SDK. No third-party analytics, no identifiers.</p>
+          <div class="om-steps">
+            <div class="om-step"><b>1. Measure</b><p>Every frame, the app records frame time and CPU time, and the GPU time from Metal. No memory is allocated per frame.</p></div>
+            <div class="om-step"><b>2. Summarize</b><p>Every 30 seconds it computes p50/p95/p99, dropped frames, hitch time, memory and thermal state for each material.</p></div>
+            <div class="om-step"><b>3. Send</b><p>One small anonymous JSON report goes to the backend. The public key can only insert rows, never read them.</p></div>
+            <div class="om-step"><b>4. Aggregate</b><p>This page reads only aggregates, through a single read-only function, and refreshes every 10 seconds.</p></div>
+          </div>
+          <div class="om-links">
+            <a class="button button-primary" href="https://github.com/KateFilimonovaEMD/OctiMonitor">OctiMonitor on GitHub</a>
+          </div>
+          <p class="om-note" style="margin-top:16px">p95 values per material and over time are frame-weighted means of each 30-second window's p95. Hitch time counts only frames that missed their display slot: under 5&nbsp;ms/s is good, 5–10 is noticeable, over 10 is bad.</p>
+        </section>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-inner">
+        <p class="footer-note">EvaMariaDreams creates thoughtful digital products.</p>
+        <div class="footer-meta">
+          <div>Copyright © 2026 EvaMariaDreams. All rights reserved.</div>
+          <div class="footer-links">
+            <a href="../about.html">About</a>
+            <a href="../privacy.html">Privacy Policy</a>
+            <a href="../terms.html">Terms of Use</a>
+            <a href="../contact.html">Contact</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.1/dist/echarts.min.js"></script>
+  <script>
+  (() => {
+    const SUPABASE_URL = "https://tpkhxrcjfbclcwpjoxwm.supabase.co";
+    const PUBLIC_KEY = "sb_publishable__IEtCxi9X95zoNj6t5WNXQ_k5HlwG3g";   // read: aggregates only
+    const REFRESH_MS = 10000;
+
+    const css = getComputedStyle(document.querySelector(".om"));
+    const C = name => css.getPropertyValue(name).trim();
+    const INK = C("--ink"), INK2 = C("--ink-2"), GRID = C("--grid"), SERIES = C("--series"), BUDGET = C("--budget");
+    const BLUES = ["#cde2fb", "#9ec5f4", "#6da7ec", "#3987e5", "#256abf", "#184f95", "#0d366b"];
+
+    const DEVICES = {
+      "iPhone12,1": "iPhone 11", "iPhone12,3": "iPhone 11 Pro", "iPhone12,5": "iPhone 11 Pro Max", "iPhone12,8": "iPhone SE (2nd gen)",
+      "iPhone13,1": "iPhone 12 mini", "iPhone13,2": "iPhone 12", "iPhone13,3": "iPhone 12 Pro", "iPhone13,4": "iPhone 12 Pro Max",
+      "iPhone14,4": "iPhone 13 mini", "iPhone14,5": "iPhone 13", "iPhone14,2": "iPhone 13 Pro", "iPhone14,3": "iPhone 13 Pro Max",
+      "iPhone14,6": "iPhone SE (3rd gen)", "iPhone14,7": "iPhone 14", "iPhone14,8": "iPhone 14 Plus",
+      "iPhone15,2": "iPhone 14 Pro", "iPhone15,3": "iPhone 14 Pro Max", "iPhone15,4": "iPhone 15", "iPhone15,5": "iPhone 15 Plus",
+      "iPhone16,1": "iPhone 15 Pro", "iPhone16,2": "iPhone 15 Pro Max",
+      "iPhone17,1": "iPhone 16 Pro", "iPhone17,2": "iPhone 16 Pro Max", "iPhone17,3": "iPhone 16", "iPhone17,4": "iPhone 16 Plus", "iPhone17,5": "iPhone 16e"
+    };
+    const deviceName = id => DEVICES[id] || id;
+    const appName = id => ({ "com.evamariadreams.opalcaress": "Opal Caress" })[id] || id.split(".").pop();
+    const THERMAL = { nominal: ["Cool", "--good"], fair: ["Warm", "--warning"], serious: ["Hot", "--serious"], critical: ["Critical", "--critical"] };
+
+    const state = { hours: 24, app: "", lastOk: 0, timer: null, data: null };
+    const $ = id => document.getElementById(id);
+    const fmt = (v, d = 1) => (v === null || v === undefined || isNaN(v)) ? "–" : Number(v).toFixed(d);
+    const int = v => (v === null || v === undefined) ? "–" : Number(v).toLocaleString("en-US");
+    const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+
+    function hitchStatus(v) {
+      if (v === null || v === undefined) return ["No data", "--ink-3"];
+      if (v < 5) return ["Smooth", "--good"];
+      if (v <= 10) return ["Noticeable", "--warning"];
+      return ["Stuttering", "--critical"];
+    }
+    function badge(label, varName) { return `<span class="om-badge" style="--badge:var(${varName})">${esc(label)}</span>`; }
+
+    const charts = {};
+    function chart(id) {
+      if (!window.echarts) return null;
+      if (!charts[id]) charts[id] = echarts.init($(id), null, { renderer: "svg" });
+      return charts[id];
+    }
+    window.addEventListener("resize", () => Object.values(charts).forEach(c => c.resize()));
+
+    const base = {
+      textStyle: { fontFamily: "Inter, sans-serif", color: INK2 },
+      grid: { left: 8, right: 16, top: 16, bottom: 8, containLabel: true },
+      tooltip: { trigger: "axis", backgroundColor: "#fff", borderColor: GRID, textStyle: { color: INK, fontSize: 13 },
+                 axisPointer: { type: "line", lineStyle: { color: INK2, width: 1 } } },
+      animationDuration: 400
+    };
+    const valueAxis = extra => Object.assign({ type: "value", axisLine: { show: false }, axisTick: { show: false },
+      splitLine: { lineStyle: { color: GRID } }, axisLabel: { color: INK2 } }, extra || {});
+    const catAxis = extra => Object.assign({ type: "category", axisLine: { lineStyle: { color: GRID } }, axisTick: { show: false },
+      axisLabel: { color: INK2 } }, extra || {});
+
+    async function load() {
+      const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/octimonitor_overview`, {
+        method: "POST",
+        headers: { "apikey": PUBLIC_KEY, "Content-Type": "application/json" },
+        body: JSON.stringify({ p_hours: state.hours, p_app: state.app || null })
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      return res.json();
+    }
+
+    async function refresh() {
+      try {
+        const data = await load();
+        state.data = data;
+        state.lastOk = Date.now();
+        $("error").hidden = true;
+        render(data);
+      } catch (e) {
+        $("error").hidden = false;
+        $("errorText").textContent = e.message || "";
+      }
+      tick();
+    }
+
+    function tick() {
+      const live = state.data && state.data.totals && state.data.totals.live_sessions > 0;
+      $("live").classList.toggle("is-live", !!live);
+      $("liveText").textContent = !state.data ? "Connecting…" : live ? "Live" : "Waiting for players";
+      if (state.lastOk) {
+        const s = Math.round((Date.now() - state.lastOk) / 1000);
+        $("updated").textContent = `Updated ${s < 2 ? "just now" : s + " s ago"} · refreshes every ${REFRESH_MS / 1000} s`;
+      }
+    }
+
+    function render(d) {
+      const apps = d.apps || [];
+      const sel = $("app");
+      if (sel.options.length !== apps.length + 1) {
+        sel.innerHTML = `<option value="">All apps</option>` + apps.map(a => `<option value="${esc(a)}">${esc(appName(a))}</option>`).join("");
+        sel.value = state.app;
+      }
+
+      const t = d.totals || {}, o = d.overall || {};
+      const hasData = (t.reports || 0) > 0;
+      $("empty").hidden = hasData;
+      $("content").hidden = !hasData;
+      if (!hasData) return;
+
+      $("tLive").textContent = int(t.live_sessions);
+      $("tSessions").textContent = int(t.sessions);
+      $("tDevices").textContent = `on ${int(t.devices)} device${t.devices === 1 ? "" : "s"}`;
+      $("tFrames").textContent = int(o.frames);
+      const minutes = (o.seconds || 0) / 60;
+      $("tPlaytime").textContent = minutes >= 90 ? `${fmt(minutes / 60, 1)} hours of play` : `${fmt(minutes, 0)} minutes of play`;
+      $("tFps").textContent = fmt(o.fps, 1);
+      $("tP95").innerHTML = `${fmt(o.frame_p95, 1)}<span style="font-size:18px;font-weight:600"> ms</span>`;
+      $("tHitch").innerHTML = `${fmt(o.hitch, 1)}<span style="font-size:18px;font-weight:600"> ms/s</span>`;
+      const hs = hitchStatus(o.hitch);
+      $("tHitchSub").innerHTML = badge(hs[0], hs[1]);
+
+      renderTimeline(d.timeline || []);
+      renderScenes(d.scenes || []);
+      renderHeat(d.device_scene || []);
+      renderMinutes(d.session_minutes || []);
+      renderVersions(d.versions || []);
+      renderRecent(d.recent || []);
+    }
+
+    function timeLabel(iso) {
+      const dt = new Date(iso);
+      return state.hours > 24
+        ? dt.toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
+        : dt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function renderTimeline(rows) {
+      const c = chart("cTimeline"); if (!c) return;
+      const x = rows.map(r => timeLabel(r.t));
+      c.setOption(Object.assign({}, base, {
+        tooltip: Object.assign({}, base.tooltip, { formatter: p => {
+          const r = rows[p[0].dataIndex];
+          return `<b>${esc(x[p[0].dataIndex])}</b><br>Frame p95: <b>${fmt(r.frame_p95)} ms</b><br>FPS: ${fmt(r.fps)}<br>Hitch: ${fmt(r.hitch)} ms/s`;
+        } }),
+        xAxis: catAxis({ data: x, boundaryGap: false }),
+        yAxis: valueAxis({ name: "ms", nameTextStyle: { color: INK2, align: "right" }, min: 0 }),
+        series: [{
+          name: "Frame time p95", type: "line", data: rows.map(r => r.frame_p95), smooth: false, showSymbol: rows.length < 40,
+          symbolSize: 8, lineStyle: { width: 2, color: SERIES }, itemStyle: { color: SERIES, borderColor: "#fff", borderWidth: 2 },
+          markLine: { silent: true, symbol: "none", lineStyle: { color: BUDGET, type: "dashed", width: 1 },
+                      label: { formatter: "60 fps budget", color: INK2, position: "insideEndTop" }, data: [{ yAxis: 16.67 }] }
+        }]
+      }), true);
+    }
+
+    function renderScenes(scenes) {
+      const c = chart("cScenes"); if (!c) return;
+      const rows = scenes.slice().sort((a, b) => (a.gpu_p95 || 0) - (b.gpu_p95 || 0));
+      $("cScenes").style.height = Math.max(160, rows.length * 38 + 40) + "px";
+      c.resize();
+      c.setOption(Object.assign({}, base, {
+        grid: { left: 8, right: 56, top: 8, bottom: 8, containLabel: true },
+        tooltip: { trigger: "item", backgroundColor: "#fff", borderColor: GRID, textStyle: { color: INK, fontSize: 13 }, formatter: p => {
+          const r = rows[p.dataIndex];
+          return `<b>${esc(r.scene)}</b><br>GPU p95: <b>${fmt(r.gpu_p95)} ms</b> · p50 ${fmt(r.gpu_p50)} ms<br>Frame p95: ${fmt(r.frame_p95)} ms · ${fmt(r.fps)} fps<br>Hitch: ${fmt(r.hitch)} ms/s · ${int(r.dropped)} dropped`;
+        } },
+        xAxis: valueAxis({ name: "ms", min: 0 }),
+        yAxis: catAxis({ data: rows.map(r => r.scene), axisLabel: { color: INK, fontWeight: 500 } }),
+        series: [{ type: "bar", data: rows.map(r => r.gpu_p95), barMaxWidth: 22, itemStyle: { color: SERIES, borderRadius: [0, 4, 4, 0] },
+                   label: { show: true, position: "right", color: INK2, formatter: p => `${fmt(p.value)} ms` } }]
+      }), true);
+
+      const sorted = scenes.slice().sort((a, b) => (b.gpu_p95 || 0) - (a.gpu_p95 || 0));
+      $("scenesTable").innerHTML =
+        `<thead><tr><th>Material</th><th class="num">FPS</th><th class="num">Frame p95</th><th class="num">GPU p50</th><th class="num">GPU p95</th><th class="num">Hitch ms/s</th><th class="num">Dropped</th><th class="num">Reduced quality</th></tr></thead><tbody>` +
+        sorted.map(r => `<tr><td>${esc(r.scene)}</td><td class="num">${fmt(r.fps)}</td><td class="num">${fmt(r.frame_p95)} ms</td><td class="num">${fmt(r.gpu_p50)} ms</td><td class="num">${fmt(r.gpu_p95)} ms</td><td class="num">${fmt(r.hitch)}</td><td class="num">${int(r.dropped)}</td><td class="num">${fmt((r.degraded || 0) * 100, 0)}%</td></tr>`).join("") +
+        `</tbody>`;
+    }
+
+    function renderHeat(cells) {
+      const c = chart("cHeat"); if (!c) return;
+      const scenes = [...new Set(cells.map(r => r.scene))].sort();
+      const devices = [...new Set(cells.map(r => r.device))].sort();
+      const max = Math.max(1, ...cells.map(r => r.gpu_p95 || 0));
+      $("cHeat").style.height = Math.max(180, devices.length * 44 + 80) + "px";
+      c.resize();
+      const data = cells.map(r => {
+        const v = r.gpu_p95 || 0;
+        return { value: [scenes.indexOf(r.scene), devices.indexOf(r.device), v],
+                 label: { color: v / max > 0.55 ? "#fff" : INK }, frames: r.frames, frame_p95: r.frame_p95 };
+      });
+      c.setOption(Object.assign({}, base, {
+        grid: { left: 8, right: 8, top: 8, bottom: 56, containLabel: true },
+        tooltip: { trigger: "item", backgroundColor: "#fff", borderColor: GRID, textStyle: { color: INK, fontSize: 13 }, formatter: p =>
+          `<b>${esc(scenes[p.value[0]])}</b> on ${esc(deviceName(devices[p.value[1]]))}<br>GPU p95: <b>${fmt(p.value[2])} ms</b><br>Frame p95: ${fmt(p.data.frame_p95)} ms<br>${int(p.data.frames)} frames` },
+        xAxis: catAxis({ data: scenes, splitArea: { show: false }, axisLabel: { color: INK, interval: 0, rotate: scenes.length > 6 ? 30 : 0 } }),
+        yAxis: catAxis({ data: devices.map(deviceName), axisLabel: { color: INK } }),
+        visualMap: { min: 0, max, calculable: false, orient: "horizontal", left: "center", bottom: 0, itemWidth: 12, itemHeight: 160,
+                     text: [`${fmt(max)} ms`, "0"], textStyle: { color: INK2 }, inRange: { color: BLUES } },
+        series: [{ type: "heatmap", data, label: { show: true, formatter: p => fmt(p.value[2]), fontSize: 12 },
+                   itemStyle: { borderColor: "#fff", borderWidth: 2, borderRadius: 4 },
+                   emphasis: { itemStyle: { borderColor: INK, borderWidth: 1 } } }]
+      }), true);
+    }
+
+    function renderMinutes(rows) {
+      const x = rows.map(r => `${r.minute} min`);
+      const tip = (label, unit, key, digits) => Object.assign({}, base.tooltip, { formatter: p => {
+        const r = rows[p[0].dataIndex];
+        return `<b>Minute ${r.minute}</b><br>${label}: <b>${key === "hot_share" ? fmt((r.hot_share || 0) * 100, 0) + "%" : fmt(r[key], digits) + unit}</b><br>${int(r.sessions)} session${r.sessions === 1 ? "" : "s"}`;
+      } });
+      const c1 = chart("cMinutesHitch");
+      if (c1) c1.setOption(Object.assign({}, base, { tooltip: tip("Hitch", " ms/s", "hitch", 1),
+        xAxis: catAxis({ data: x, boundaryGap: false }), yAxis: valueAxis({ min: 0 }),
+        series: [{ type: "line", data: rows.map(r => r.hitch), showSymbol: rows.length < 30, symbolSize: 8,
+                   lineStyle: { width: 2, color: SERIES }, itemStyle: { color: SERIES, borderColor: "#fff", borderWidth: 2 } }] }), true);
+      const c2 = chart("cMinutesHot");
+      if (c2) c2.setOption(Object.assign({}, base, { tooltip: tip("Running hot", "", "hot_share", 0),
+        xAxis: catAxis({ data: x }), yAxis: valueAxis({ min: 0, max: 100, axisLabel: { color: INK2, formatter: "{value}%" } }),
+        series: [{ type: "bar", data: rows.map(r => Math.round((r.hot_share || 0) * 100)), barMaxWidth: 18,
+                   itemStyle: { color: C("--serious"), borderRadius: [4, 4, 0, 0] } }] }), true);
+    }
+
+    function renderVersions(rows) {
+      $("versionsTable").innerHTML =
+        `<thead><tr><th>App</th><th>Version</th><th class="num">Sessions</th><th class="num">FPS</th><th class="num">Frame p95</th><th class="num">GPU p95</th><th>Hitch</th></tr></thead><tbody>` +
+        rows.map(r => { const h = hitchStatus(r.hitch);
+          return `<tr><td>${esc(appName(r.app))}</td><td>${esc(r.version)}</td><td class="num">${int(r.sessions)}</td><td class="num">${fmt(r.fps)}</td><td class="num">${fmt(r.frame_p95)} ms</td><td class="num">${fmt(r.gpu_p95)} ms</td><td>${fmt(r.hitch)} ms/s &nbsp;${badge(h[0], h[1])}</td></tr>`; }).join("") +
+        `</tbody>`;
+    }
+
+    function renderRecent(rows) {
+      const ago = iso => { const s = Math.max(0, Math.round((Date.now() - new Date(iso)) / 1000));
+        return s < 60 ? `${s} s ago` : s < 3600 ? `${Math.round(s / 60)} min ago` : s < 86400 ? `${Math.round(s / 3600)} h ago` : new Date(iso).toLocaleDateString("en-GB"); };
+      $("recentTable").innerHTML =
+        `<thead><tr><th>When</th><th>Device</th><th>App</th><th>Material</th><th class="num">FPS</th><th class="num">Frame p95</th><th class="num">GPU p95</th><th>Heat</th></tr></thead><tbody>` +
+        rows.map(r => { const th = THERMAL[r.thermal] || ["Unknown", "--ink-3"];
+          return `<tr><td>${ago(r.at)}</td><td>${esc(deviceName(r.device))}</td><td>${esc(appName(r.app))} <span style="color:var(--ink-3)">${esc(r.version)}</span></td><td>${esc(r.scene)}</td><td class="num">${fmt(r.fps)}</td><td class="num">${fmt(r.frame_p95)} ms</td><td class="num">${fmt(r.gpu_p95)} ms</td><td>${badge(th[0], th[1])}</td></tr>`; }).join("") +
+        `</tbody>`;
+    }
+
+    $("range").addEventListener("click", e => {
+      const b = e.target.closest("button[data-hours]"); if (!b) return;
+      state.hours = Number(b.dataset.hours);
+      for (const x of $("range").querySelectorAll("button")) x.setAttribute("aria-pressed", String(x === b));
+      refresh();
+    });
+    $("app").addEventListener("change", e => { state.app = e.target.value; refresh(); });
+
+    function schedule() {
+      clearInterval(state.timer);
+      if (!document.hidden) state.timer = setInterval(refresh, REFRESH_MS);
+    }
+    document.addEventListener("visibilitychange", () => { schedule(); if (!document.hidden) refresh(); });
+    setInterval(tick, 1000);
+    refresh();
+    schedule();
+  })();
+  </script>
+</body>
+</html>
