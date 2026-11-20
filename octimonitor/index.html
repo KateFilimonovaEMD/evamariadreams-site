@@ -100,6 +100,10 @@
     .bar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
     .live { display: inline-flex; align-items: center; gap: 10px; padding: 8px 14px 8px 12px; border-radius: 999px; font-size: 14px; color: var(--ash); }
     .live b { color: var(--white); font-weight: 600; }
+    /* Fixed slots so the pill keeps its width as the status and the age change */
+    #liveText { display: inline-block; min-width: 5.6em; }
+    #updated { display: inline-block; min-width: 8.4em; font-variant-numeric: tabular-nums; }
+    .bar-right .ghost { white-space: nowrap; }
     .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ash-2); }
     .live.on .dot { background: var(--ember); box-shadow: 0 0 0 0 rgba(255, 90, 31, 0.6); animation: pulse 1.8s infinite; }
     @keyframes pulse { 70% { box-shadow: 0 0 0 9px rgba(255, 90, 31, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 90, 31, 0); } }
@@ -605,7 +609,7 @@
       $("liveText").textContent = !state.data ? "Connecting" : live ? "Live" : "Idle";
       if (state.lastOk) {
         const s = Math.round((Date.now() - state.lastOk) / 1000);
-        $("updated").textContent = s < 2 ? "updated just now" : `updated ${s}s ago`;
+        $("updated").textContent = s < 2 ? "updated now" : s < 60 ? `updated ${s}s ago` : `updated ${Math.floor(s / 60)}m ago`;
       }
     }
 
