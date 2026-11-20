@@ -336,13 +336,14 @@
       .kpi:nth-child(even) { border-left: 1px solid rgba(255,247,238,.07); }
       .kpi:last-child { grid-column: 1 / -1; border-left: 0; }
       .grid.split, .pair { grid-template-columns: 1fr; }
-      .pipe { grid-template-columns: 1fr; gap: 14px; padding-top: 0; padding-left: 34px; }
+      .pipe { grid-template-columns: 1fr; gap: 14px; padding-top: 0; padding-left: 58px; }
       .pipe-note { text-align: left; }
-      .pipe-line { left: 25px; right: auto; top: 20px; bottom: 20px; width: 2px; height: auto; background: linear-gradient(180deg, rgba(255,61,0,.15), rgba(255,140,40,.55), rgba(255,241,214,.35)); }
+      .pipe-line { left: 21px; right: auto; top: 80px; bottom: 80px; width: 2px; height: auto; background: linear-gradient(180deg, rgba(255,61,0,.15), rgba(255,140,40,.55), rgba(255,241,214,.35)); }
       .pipe-line::after { left: 0; top: -13%; width: 2px; height: 26%; background: linear-gradient(180deg, rgba(255,214,160,0), rgba(255,226,190,.95) 50%, rgba(255,214,160,0)); animation-name: wavev; }
       @keyframes wavev { 0% { transform: translateY(0); opacity: 0; } 6% { opacity: 1; } 94% { opacity: 1; } 100% { transform: translateY(calc(100% * 100 / 26)); opacity: 0; } }
-      .stage { padding: 18px 18px 18px 30px; text-align: left; }
-      .stage .stage-num { top: 16px; left: -31px; margin-left: 0; width: 44px; height: 44px; font-size: 16px; }
+      .stage { padding: 18px; text-align: left; }
+      /* Circles sit fully left of the cards, centred on each card and on the line */
+      .stage .stage-num { top: 50%; margin-top: -22px; left: -58px; margin-left: 0; width: 44px; height: 44px; font-size: 16px; }
       .inspector { position: static; }
     }
     @media (max-width: 560px) {
