@@ -365,7 +365,8 @@
       $("tDevices").textContent = `on ${int(t.devices)} device${t.devices === 1 ? "" : "s"}`;
       $("tFrames").textContent = int(o.frames);
       const minutes = (o.seconds || 0) / 60;
-      $("tPlaytime").textContent = minutes >= 90 ? `${fmt(minutes / 60, 1)} hours of play` : `${fmt(minutes, 0)} minutes of play`;
+      const m = Math.max(1, Math.round(minutes));
+      $("tPlaytime").textContent = minutes >= 90 ? `${fmt(minutes / 60, 1)} hours of play` : `${m} minute${m === 1 ? "" : "s"} of play`;
       $("tFps").textContent = fmt(o.fps, 1);
       $("tP95").innerHTML = `${fmt(o.frame_p95, 1)}<span style="font-size:18px;font-weight:600"> ms</span>`;
       $("tHitch").innerHTML = `${fmt(o.hitch, 1)}<span style="font-size:18px;font-weight:600"> ms/s</span>`;
