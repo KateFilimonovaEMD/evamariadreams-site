@@ -237,20 +237,25 @@
     .check.sev-critical::after, .check.sev-warning::after {
       content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
       background: radial-gradient(120% 140% at 0% 50%, var(--glow), transparent 55%);
-      opacity: .35; animation: breathe var(--period) ease-in-out infinite;
+      opacity: .35; animation: breathe var(--period) ease-in-out var(--phase, 0s) infinite;
     }
     .check.sev-critical { --glow: rgba(255, 61, 0, 0.22); --period: 2.2s; box-shadow: inset 0 0 0 1px rgba(255, 61, 0, 0.18), inset 0 1px 0 rgba(255,247,238,.06); }
     .check.sev-warning { --glow: rgba(255, 176, 32, 0.14); --period: 3.6s; }
     .check { position: relative; }
-    .check.sev-critical .sev::before, .check.sev-warning .sev::before { animation: ring var(--period) ease-out infinite; }
-    .sev.pulsing::before { animation: ring var(--period) ease-out infinite; }
+    .check.sev-critical .sev::before, .check.sev-warning .sev::before { animation: ring var(--period) ease-in-out var(--phase, 0s) infinite; }
+    .sev.pulsing::before { animation: ring var(--period) ease-in-out infinite; }
     @keyframes breathe { 0%, 100% { opacity: .25; } 50% { opacity: 1; } }
-    @keyframes ring { 0% { box-shadow: 0 0 0 0 var(--c), 0 0 10px var(--c); } 70% { box-shadow: 0 0 0 7px transparent, 0 0 10px var(--c); } 100% { box-shadow: 0 0 0 0 transparent, 0 0 10px var(--c); } }
+    @keyframes ring {
+      0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--c) 0%, transparent), 0 0 8px color-mix(in srgb, var(--c) 60%, transparent); }
+      18%  { box-shadow: 0 0 0 1.5px color-mix(in srgb, var(--c) 65%, transparent), 0 0 12px var(--c); }
+      75%  { box-shadow: 0 0 0 8px color-mix(in srgb, var(--c) 0%, transparent), 0 0 9px color-mix(in srgb, var(--c) 75%, transparent); }
+      100% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--c) 0%, transparent), 0 0 8px color-mix(in srgb, var(--c) 60%, transparent); }
+    }
     /* With reduced motion the glow still breathes (brightness only, nothing moves); the expanding ring becomes a brightness pulse. */
     @keyframes glowdot { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
     @media (prefers-reduced-motion: reduce) {
       .check.sev-critical::after, .check.sev-warning::after { animation-duration: calc(var(--period) * 1.6); }
-      .check.sev-critical .sev::before, .check.sev-warning .sev::before, .sev.pulsing::before { animation: glowdot calc(var(--period) * 1.6) ease-in-out infinite; }
+      .check.sev-critical .sev::before, .check.sev-warning .sev::before, .sev.pulsing::before { animation: glowdot calc(var(--period) * 1.6) ease-in-out var(--phase, 0s) infinite; }
     }
     .check-detail { color: var(--ash); font-size: 14px; }
     .check-go { color: var(--ash-2); font-size: 13px; white-space: nowrap; }
@@ -837,6 +842,9 @@
 
     function renderChecks(d) {
       const list = runChecks(d);
+      const sig = JSON.stringify(list);
+      if (sig === renderChecks.last) return;
+      renderChecks.last = sig;
       const crit = list.filter(c => c.sev === "critical").length, warn = list.length - crit;
       const sum = $("checkSummary");
       if (!list.length) { sum.textContent = "All checks passing"; sum.style.setProperty("--c", WHITE); }
@@ -846,6 +854,12 @@
       $("checks").innerHTML = list.length
         ? list.map((c, i) => `<li class="check clickable sev-${c.sev}" tabindex="0" data-i="${i}"><span class="sev" style="--c:${SEV[c.sev][1]}">${SEV[c.sev][0]}</span><span><div class="check-title">${esc(c.title)}</div><div class="check-detail">${esc(c.detail)}</div></span><span class="check-go">Inspect</span></li>`).join("")
         : `<li class="check"><span class="sev" style="--c:${WHITE}">Passing</span><span><div class="check-title">Within budget</div><div class="check-detail">Every material fits the GPU budget, hitches are under 5 ms/s and no regression against the previous build.</div></span><span></span></li>`;
+      // Phase every pulse to the page clock so rebuilt rows continue the same rhythm instead of restarting
+      const now = performance.now() / 1000;
+      $("checks").querySelectorAll(".check.sev-critical, .check.sev-warning").forEach(el => {
+        const period = el.classList.contains("sev-critical") ? 2.2 : 3.6;
+        el.style.setProperty("--phase", `${-(now % period).toFixed(3)}s`);
+      });
       $("checks").querySelectorAll(".check.clickable").forEach(el => {
         const go = () => {
           const c = list[Number(el.dataset.i)];
