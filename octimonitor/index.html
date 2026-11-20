@@ -9,7 +9,7 @@
   <meta name="theme-color" content="#000000">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;display=swap" rel="stylesheet">
   <style>
     :root {
       --black: #000000;
@@ -182,7 +182,8 @@
     .panel p.note { margin: 6px 0 14px; color: var(--ash); font-size: 14px; max-width: 70ch; }
     .chart { width: 100%; height: 300px; }
     .chart.short { height: 220px; }
-    .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+    .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
+    .pair > *, .grid > * { min-width: 0; }
     .subhead { font-size: 14px; color: var(--ash); margin: 4px 0 0; }
     .hint { font-size: 13px; color: var(--ash-2); margin-top: 8px; }
 
@@ -379,7 +380,7 @@
       .kpi:nth-child(-n+2) { border-top: 0; }
       .kpi:nth-child(even) { border-left: 1px solid rgba(255,247,238,.07); }
       .kpi:last-child { grid-column: 1 / -1; border-left: 0; }
-      .grid.split, .pair { grid-template-columns: 1fr; }
+      .grid.split, .pair { grid-template-columns: minmax(0, 1fr); }
       .pipe { grid-template-columns: 1fr; gap: 14px; padding-top: 0; padding-left: 58px; }
       .pipe-note { text-align: center; }
       .pipe-line { left: 21px; right: auto; top: 80px; bottom: 80px; width: 2px; height: auto; background: linear-gradient(180deg, rgba(255,61,0,.15), rgba(255,140,40,.55), rgba(255,241,214,.35)); }
@@ -741,7 +742,9 @@
       $("appsSection").hidden = !show;
       document.querySelectorAll("[data-combined]").forEach(el => el.hidden = !show);
       if (!show) return;
+      const seq = requestSeq;
       const per = await Promise.all(apps.map(a => loadApp(a).then(x => [a, x]).catch(() => [a, null])));
+      if (seq !== requestSeq || state.app) return;   // the view changed while these were loading
       $("apps").innerHTML = per.map(([a, x]) => {
         const t = (x && x.totals) || {}, o = (x && x.overall) || {}, v = verdict(o.hitch);
         const live = t.live_sessions > 0;
@@ -756,14 +759,19 @@
       }));
     }
 
+    let requestSeq = 0;
     async function refresh(manual) {
+      const seq = ++requestSeq;
       try {
-        state.data = await load();
+        const data = await load();
+        if (seq !== requestSeq) return;            // a newer request (range or app change) superseded this one
+        state.data = data;
         state.lastOk = Date.now();
         $("error").hidden = true;
         render(state.data);
         if (manual) toast("Refreshed");
       } catch (e) {
+        if (seq !== requestSeq) return;
         $("error").hidden = false;
         $("errorText").textContent = e.message || "";
       }
@@ -784,12 +792,18 @@
     function render(d) {
       const apps = d.apps || [];
       const sel = $("app");
-      if (sel.options.length !== apps.length + 1) {
+      const appKey = apps.join("|");
+      if (sel.dataset.apps !== appKey) {
         sel.innerHTML = `<option value="">All apps</option>` + apps.map(a => `<option value="${esc(a)}">${esc(appName(a))}</option>`).join("");
+        sel.dataset.apps = appKey;
+      }
+      if (state.app && apps.length && !apps.includes(state.app)) {
+        state.app = ""; syncUrl(); refresh(); return;
       }
       sel.value = state.app;
       const t = d.totals || {}, o = d.overall || {};
       const has = (t.reports || 0) > 0;
+      const wasHidden = $("content").hidden;
       $("empty").hidden = has;
       $("content").hidden = !has;
       $("export").disabled = !has;
@@ -816,6 +830,7 @@
       renderRecent(d.recent || []);
       renderInspector();
       placeThumbs();
+      if (wasHidden) requestAnimationFrame(() => Object.values(charts).forEach(c => c.resize()));
       state.firstLoad = false;
     }
 
@@ -878,8 +893,8 @@
       sum.classList.toggle("pulsing", list.length > 0);
       sum.style.setProperty("--period", crit ? "2.2s" : "3.6s");
       $("checks").innerHTML = list.length
-        ? list.map((c, i) => `<li class="check clickable sev-${c.sev}" tabindex="0" data-i="${i}"><span class="sev" style="--c:${SEV[c.sev][1]}">${SEV[c.sev][0]}</span><span><div class="check-title">${esc(c.title)}</div><div class="check-detail">${esc(c.detail)}</div></span><span class="check-go">Inspect</span></li>`).join("")
-        : `<li class="check"><span class="sev" style="--c:${WHITE}">Passing</span><span><div class="check-title">Within budget</div><div class="check-detail">Every material fits the GPU budget, hitches are under 5 ms/s and no regression against the previous build.</div></span><span></span></li>`;
+        ? list.map((c, i) => `<li class="check clickable sev-${c.sev}" tabindex="0" data-i="${i}"><span class="sev" style="--c:${SEV[c.sev][1]}">${SEV[c.sev][0]}</span><div><div class="check-title">${esc(c.title)}</div><div class="check-detail">${esc(c.detail)}</div></div><span class="check-go">Inspect</span></li>`).join("")
+        : `<li class="check"><span class="sev" style="--c:${WHITE}">Passing</span><div><div class="check-title">Within budget</div><div class="check-detail">Every material fits the GPU budget, hitches are under 5 ms/s and no regression against the previous build.</div></div><span></span></li>`;
       // Phase every pulse to the page clock so rebuilt rows continue the same rhythm instead of restarting
       const now = performance.now() / 1000;
       $("checks").querySelectorAll(".check.sev-critical, .check.sev-warning").forEach(el => {
@@ -918,8 +933,11 @@
       const refLines = close
         ? m.ref.map((r, i) => ({ yAxis: r.y, label: i === m.ref.length - 1 ? { formatter: m.ref.map(q => `${q.label} ${q.y}`).join(" · "), position: "insideEndTop" } : { show: false } }))
         : m.ref.map((r, i) => ({ yAxis: r.y, label: { formatter: r.label, position: m.ref.length > 1 && i === 0 ? "insideEndBottom" : "insideEndTop" } }));
-      const prev = c.getOption && c.getOption();
+      const viewKey = `${state.app}|${state.hours}`;
+      const prev = c.__view === viewKey && c.getOption && c.getOption();
       const zoom = prev && prev.dataZoom && prev.dataZoom[0] ? { start: prev.dataZoom[0].start, end: prev.dataZoom[0].end } : { start: 0, end: 100 };
+      const rebuild = state.metricChanged || c.__view !== viewKey;
+      c.__view = viewKey;
       apply(c, Object.assign(base(), {
         grid: { left: 4, right: 18, top: 18, bottom: 4, containLabel: true },
         tooltip: tooltip({ trigger: "axis", axisPointer: { type: "line", lineStyle: { color: "rgba(255,247,238,.35)" } }, formatter: p => {
@@ -940,7 +958,7 @@
                       label: { color: ASH, position: "insideEndTop", fontSize: 11 },
                       data: refLines }
         }]
-      }), state.metricChanged);
+      }), rebuild);
       state.metricChanged = false;
     }
 
@@ -957,7 +975,7 @@
           const r = rows[p.dataIndex];
           return `<b>${esc(r.scene)}</b><br>GPU p95 <b>${fmt(r.gpu_p95)} ms</b>, p50 ${fmt(r.gpu_p50)} ms<br><span style="color:${ASH}">Frame p95 ${fmt(r.frame_p95)} ms, ${fmt(r.fps)} fps<br>Hitch ${fmt(r.hitch)} ms/s, ${int(r.dropped)} dropped</span><br><span style="color:${AMBER}">Click to inspect</span>`;
         } }),
-        xAxis: valueAxis({ min: 0, splitNumber: innerWidth < 600 ? 3 : 4, axisLabel: lbl({ formatter: innerWidth < 600 ? "{value}" : "{value} ms" }) }),
+        xAxis: valueAxis({ min: 0, max: v => Math.ceil(Math.max(v.max * 1.05, BUDGET_MS * 1.1)), splitNumber: innerWidth < 600 ? 3 : 4, axisLabel: lbl({ formatter: innerWidth < 600 ? "{value}" : "{value} ms" }) }),
         yAxis: catAxis({ data: rows.map(r => r.scene), triggerEvent: true, axisLine: { show: false },
           axisLabel: { color: WHITE, fontWeight: 500, fontSize: 13, formatter: v => pick && v !== pick ? `{dim|${v}}` : v, rich: { dim: { color: ASH2, fontSize: 13 } } } }),
         series: [{ type: "bar", data: rows.map(r => ({ value: r.gpu_p95, itemStyle: { opacity: pick && r.scene !== pick ? 0.22 : 1 } })), barMaxWidth: 20, cursor: "pointer",
@@ -1108,14 +1126,14 @@
             ${budgetBar(s.gpu_p95)}
             <p class="hint">${compareText(s.gpu_p95, avgAll, "the average material")}</p>
             <div class="rows"><h3>By phone, GPU p95</h3>${rowbars(per.map(r => ({ name: deviceName(r.device), value: r.gpu_p95, key: r.device })), Math.max(BUDGET_MS, ...per.map(r => r.gpu_p95)), "ms")}</div>`;
-          setTimeout(() => body.querySelectorAll(".rows .rowbar").forEach((el, i) => el.addEventListener("click", () => select({ scene, device: per[i].device }))), 0);
+          setTimeout(() => body.querySelectorAll(".rows .rowbar").forEach((el, i) => { const go = () => select({ scene, device: per[i].device }); el.addEventListener("click", go); el.addEventListener("keydown", e => { if (e.key === "Enter") go(); }); }), 0);
         } else html += `<p class="empty">No data for ${esc(scene)} in the selected range.</p>`;
       } else {
         const per = cells.filter(r => r.device === device).sort((a, b) => b.gpu_p95 - a.gpu_p95);
         const frames = per.reduce((n, r) => n + (r.frames || 0), 0);
         html += per.length ? `<div class="mini"><div><span>GPU p95</span><b>${fmt(weighted(per, "gpu_p95"))}</b></div><div><span>Frame p95</span><b>${fmt(weighted(per, "frame_p95"))}</b></div><div><span>Frames</span><b>${int(frames)}</b></div></div>
           <div class="rows"><h3>By material, GPU p95</h3>${rowbars(per.map(r => ({ name: r.scene, value: r.gpu_p95 })), Math.max(BUDGET_MS, ...per.map(r => r.gpu_p95)), "ms")}</div>` : `<p class="empty">No data for this phone in the selected range.</p>`;
-        setTimeout(() => body.querySelectorAll(".rows .rowbar").forEach((el, i) => el.addEventListener("click", () => select({ scene: per[i].scene, device }))), 0);
+        setTimeout(() => body.querySelectorAll(".rows .rowbar").forEach((el, i) => { const go = () => select({ scene: per[i].scene, device }); el.addEventListener("click", go); el.addEventListener("keydown", e => { if (e.key === "Enter") go(); }); }), 0);
       }
       body.innerHTML = html;
       body.querySelectorAll("[data-clear]").forEach(b => b.addEventListener("click", () => {
