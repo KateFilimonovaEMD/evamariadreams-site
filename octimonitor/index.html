@@ -196,7 +196,8 @@
     .combined-note { display: inline-block; margin-left: 8px; font-size: 12px; font-weight: 500; color: var(--amber); font-family: var(--text); letter-spacing: 0; vertical-align: middle; }
 
     /* Material x device matrix */
-    .matrix-wrap { overflow-x: auto; margin: -12px -24px -18px; padding: 18px 24px 24px; }  /* room for tile glows inside the scroll box */
+    .matrix-wrap { overflow: visible; margin: -12px -24px -26px; padding: 18px 24px 40px; }  /* room for tile glows */
+    .matrix-wrap.scrolls { overflow-x: auto; }
     .matrix { display: grid; gap: 10px; align-items: stretch; min-width: max-content; }
     .mx-head, .mx-dev { font-size: 13px; font-weight: 600; color: var(--white); background: none; border: 0; cursor: pointer; padding: 4px 6px; border-radius: 10px; text-align: center; transition: color .2s, background .2s; }
     .mx-dev { text-align: left; display: flex; align-items: center; }
@@ -999,6 +1000,10 @@
         }
       }
       box.innerHTML = html;
+      // Only become a scroll box (which clips glows) when the grid is actually wider than the panel
+      const wrap = box.parentElement;
+      wrap.classList.remove("scrolls");
+      if (box.scrollWidth > wrap.clientWidth - 48) wrap.classList.add("scrolls");
       box.querySelectorAll(".mx-cell").forEach(b => b.addEventListener("click", () => select({ scene: b.dataset.scene, device: b.dataset.device })));
       box.querySelectorAll(".mx-head").forEach(b => b.addEventListener("click", () => select({ scene: b.dataset.scene, device: null })));
       box.querySelectorAll(".mx-dev").forEach(b => b.addEventListener("click", () => select({ scene: null, device: b.dataset.device })));
