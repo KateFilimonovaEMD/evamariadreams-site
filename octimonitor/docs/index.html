@@ -232,6 +232,7 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
             <p><b>Why <code>phys_footprint</code>.</b> It is the number iOS itself uses to decide when to kill an app for using too much memory, so it is the one that matters, not the virtual size.</p>
           </div>
           <p>Gaps of a second or more between frames are ignored. They mean the app was paused or in the background, not that a frame was slow.</p>
+          <p>GPU time is optional. An app without a Metal command buffer of its own can send frame timing alone; the dashboard then says that GPU time isn't reported instead of drawing empty bars.</p>
         </section>
 
         <section id="metrics">
@@ -270,7 +271,7 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
 
         <section id="report">
           <h2>The report</h2>
-          <p>Every 30 seconds (10 in debug builds) the app sends one row. If the phone is offline, up to 20 rows wait in memory and go out together with the next successful request; the oldest are dropped first.</p>
+          <p>Every 30 seconds by default the app sends one row (Opal Caress uses 10 seconds in debug builds). If the phone is offline, the request times out or the server is busy (408, 429 or 5xx), up to 20 rows wait in memory and go out together with the next successful request; the oldest are dropped first. Any other 4xx means the server rejected the rows themselves, so they are dropped instead of blocking newer reports.</p>
 <pre><code>{
   <span class="k">"app"</span>: "com.evamariadreams.opalcaress",
   <span class="k">"kind"</span>: "perf",
@@ -391,7 +392,8 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
             <li><strong>Heat has four levels.</strong> iOS doesn't give apps a temperature, only nominal, fair, serious and critical.</li>
             <li><strong>One command buffer per frame is assumed</strong> for GPU time. A renderer that splits a frame into several buffers should add their times together.</li>
             <li><strong>Up to about 40 seconds of delay</strong> between a frame and the dashboard.</li>
-            <li><strong>Debug builds are included</strong> and marked as such. They send every 10 seconds instead of 30.</li>
+            <li><strong>Debug builds are included</strong> and marked as such, so they can be filtered out or compared.</li>
+            <li><strong>GPU time needs Metal.</strong> Apps that don't read it from a Metal command buffer report frame timing only.</li>
           </ul>
         </section>
       </article>

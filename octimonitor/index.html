@@ -517,6 +517,7 @@
           <h2>GPU cost per scene<span class="combined-note" data-combined hidden>all apps combined</span></h2>
           <p class="note">How long the GPU works on one frame of each scene, p95. A scene is whatever an app splits its numbers by: a material, a level, a tool or a screen. Click a bar to inspect it.</p>
           <div class="chart" id="cScenes" role="img" aria-label="Bar chart of GPU time per scene"></div>
+          <p class="empty no-gpu" data-nogpu hidden>No GPU time in this view. The app sends frame timing only; GPU time needs a Metal command buffer to read it from.</p>
           <details><summary>Show as table</summary><div class="table-wrap"><table id="scenesTable"></table></div></details>
         </article>
         <aside class="panel glass inspector" id="inspector" aria-live="polite">
@@ -529,6 +530,7 @@
         <article class="panel glass" id="pHeatmap">
           <h2>Scene × device<span class="combined-note" data-combined hidden>all apps combined</span></h2>
           <p class="note">GPU time p95 for each scene on each phone model seen, and how much of the 16.7&nbsp;ms frame it uses. Click a tile, a scene or a phone to inspect it.</p>
+          <p class="empty no-gpu" data-nogpu hidden>No GPU time in this view, so there is nothing to compare across phones yet.</p>
           <div class="matrix-wrap"><div class="matrix" id="cHeat" role="grid" aria-label="GPU time by scene and device"></div></div>
           <div class="mx-legend" aria-hidden="true"><span>headroom</span><span class="scale"></span><span>over budget</span></div>
         </article>
@@ -830,7 +832,15 @@
       renderApps(d).catch(() => {});
       renderChecks(d);
       renderTimeline();
+      // Apps without a Metal renderer report frames only: say so instead of drawing 0 ms bars
+      const hasGpu = (d.scenes || []).some(r => r.gpu_p95 > 0);
+      const gpuWasHidden = $("cScenes").hidden;
+      $("cScenes").hidden = !hasGpu;
+      document.querySelector("#pHeatmap .matrix-wrap").hidden = !hasGpu;
+      document.querySelector("#pHeatmap .mx-legend").hidden = !hasGpu;
+      document.querySelectorAll("[data-nogpu]").forEach(el => el.hidden = hasGpu);
       renderScenes();
+      if (hasGpu && gpuWasHidden && charts.cScenes) requestAnimationFrame(() => charts.cScenes.resize());
       renderHeat();
       renderMinutes(d.session_minutes || []);
       renderCompare();
@@ -1129,7 +1139,7 @@
         const c = cells.find(r => r.scene === scene && r.device === device);
         const all = cells.filter(r => r.scene === scene);
         const avg = weighted(all, "gpu_p95");
-        html += c ? `<div class="mini"><div><span>GPU p95</span><b>${fmt(c.gpu_p95)}</b></div><div><span>Frame p95</span><b>${fmt(c.frame_p95)}</b></div><div><span>Frames</span><b>${int(c.frames)}</b></div></div>
+        html += c ? `<div class="mini"><div><span>GPU p95</span><b>${c.gpu_p95 > 0 ? fmt(c.gpu_p95) : "—"}</b></div><div><span>Frame p95</span><b>${fmt(c.frame_p95)}</b></div><div><span>Frames</span><b>${int(c.frames)}</b></div></div>
           ${budgetBar(c.gpu_p95)}
           <p class="hint">${compareText(c.gpu_p95, avg, `${esc(scene)} on all phones`)}</p>` : `<p class="empty">No data for this pair in the selected range.</p>`;
       } else if (scene) {
@@ -1137,7 +1147,7 @@
         const per = cells.filter(r => r.scene === scene).sort((a, b) => b.gpu_p95 - a.gpu_p95);
         if (s) {
           const avgAll = weighted(d.scenes || [], "gpu_p95");
-          html += `<div class="mini"><div><span>GPU p95</span><b>${fmt(s.gpu_p95)}</b></div><div><span>Frame p95</span><b>${fmt(s.frame_p95)}</b></div><div><span>FPS</span><b>${fmt(s.fps)}</b></div>
+          html += `<div class="mini"><div><span>GPU p95</span><b>${s.gpu_p95 > 0 ? fmt(s.gpu_p95) : "—"}</b></div><div><span>Frame p95</span><b>${fmt(s.frame_p95)}</b></div><div><span>FPS</span><b>${fmt(s.fps)}</b></div>
             <div><span>Hitch ms/s</span><b>${fmt(s.hitch)}</b></div><div><span>Dropped</span><b>${int(s.dropped)}</b></div><div><span>Reduced quality</span><b>${fmt((s.degraded || 0) * 100, 0)}%</b></div></div>
             ${budgetBar(s.gpu_p95)}
             <p class="hint">${compareText(s.gpu_p95, avgAll, "the average scene")}</p>
