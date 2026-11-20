@@ -160,6 +160,7 @@
         <p>On this page</p>
         <ol>
           <li><a href="#path">The path of a number</a></li>
+          <li><a href="#scenes">Scenes</a></li>
           <li><a href="#measure">What the app measures</a></li>
           <li><a href="#metrics">Metrics and formulas</a></li>
           <li><a href="#report">The report</a></li>
@@ -167,7 +168,7 @@
           <li><a href="#backend">Backend and aggregation</a></li>
           <li><a href="#dashboard">Dashboard, block by block</a></li>
           <li><a href="#checks">Health check rules</a></li>
-          <li><a href="#cost">Cost inside the game</a></li>
+          <li><a href="#cost">Cost inside the app</a></li>
           <li><a href="#limits">Known limits</a></li>
         </ol>
       </nav>
@@ -175,25 +176,40 @@
       <article>
         <section id="path">
           <h2>The path of a number</h2>
-          <p>Every value on the dashboard is measured on a real player's phone during normal play. Nothing is simulated or sampled in a lab.</p>
+          <p>Every value on the dashboard is measured on a real person's phone during normal use. Nothing is simulated or sampled in a lab.</p>
           <ol class="flow">
-            <li><b>Measure.</b> On every frame the app records how long the frame took, how long the CPU spent preparing it and how long the GPU spent drawing it. Each frame is tagged with the current material (Slime, Spark, Lightning…).</li>
-            <li><b>Summarize.</b> Every 30 seconds, and whenever the app goes to the background, the frames of that window are turned into a summary per material: percentiles, frame rate, dropped frames, hitch time, plus memory and heat.</li>
+            <li><b>Measure.</b> On every frame the app records how long the frame took, how long the CPU spent preparing it and how long the GPU spent drawing it. Each frame is tagged with the app's current scene: a material, a level, a tool, whatever the app chooses.</li>
+            <li><b>Summarize.</b> Every 30 seconds, and whenever the app goes to the background, the frames of that window are turned into a summary per scene: percentiles, frame rate, dropped frames, hitch time, plus memory and heat.</li>
             <li><b>Send.</b> The summary goes out as one small JSON row to a Postgres table in Supabase. The app's key can only add rows, never read them.</li>
             <li><b>Aggregate.</b> The dashboard calls one read-only database function every 10 seconds. It combines all rows in the selected range and returns totals and averages, never individual rows.</li>
           </ol>
           <p>So a frame drawn right now shows up on the dashboard within about 40 seconds: up to 30 seconds until its window closes, plus up to 10 seconds until the next refresh.</p>
         </section>
 
+        <section id="scenes">
+          <h2>Scenes</h2>
+          <p>OctiMonitor is not tied to one app or one kind of content. Every frame carries a <strong>scene</strong>: a short name the app chooses for what is on screen. All per-part numbers on the dashboard, such as GPU cost, the scene × device grid and the inspector, are split by it.</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>App</th><th>Scene means</th><th>Example names</th></tr></thead>
+            <tbody>
+              <tr><td>Opal Caress</td><td>The material being played with</td><td>Slime, Spark, Lightning</td></tr>
+              <tr><td>A sculpting app</td><td>The active tool</td><td>Sculpt, Smooth, Paint</td></tr>
+              <tr><td>A game</td><td>The level or screen</td><td>Menu, Level 3, Boss fight</td></tr>
+            </tbody>
+          </table></div>
+          <p>Several apps can report into the same backend. Each row carries the app's bundle id, so the dashboard can show all apps together or one at a time, each with its own scenes, phones and builds.</p>
+          <div class="why"><p><b>Why the app picks the name.</b> Only the app knows which parts of it cost differently to draw. A fixed list would fit one app and be meaningless for the next. Use a small, stable set of names: they become the rows of every breakdown, and at most 32 are kept apart.</p></div>
+        </section>
+
         <section id="measure">
           <h2>What the app measures</h2>
-          <p>OctiMonitor is a small Swift package. The game calls it in two places in its Metal renderer; everything else happens inside the package.</p>
+          <p>OctiMonitor is a small Swift package for any iOS app that draws with Metal. The app calls it in two places in its renderer; everything else happens inside the package. The example below is how Opal Caress does it.</p>
 <pre><code><span class="c">// In the command buffer's completed handler: the GPU's own timestamps</span>
-OctiMonitor.<span class="k">recordGPU</span>(start: buffer.gpuStartTime, end: buffer.gpuEndTime, scene: material)
+OctiMonitor.<span class="k">recordGPU</span>(start: buffer.gpuStartTime, end: buffer.gpuEndTime, scene: currentScene)
 
 <span class="c">// After the frame is committed</span>
 OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: CACurrentMediaTime() - now,
-                        scene: material, targetFPS: target, degraded: effectsReduced)</code></pre>
+                        scene: currentScene, targetFPS: target, degraded: isReducedQuality)</code></pre>
 
           <div class="table-wrap"><table>
             <thead><tr><th>Value</th><th>Source</th><th>When</th></tr></thead>
@@ -202,8 +218,8 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
               <tr><td>CPU time</td><td>Time from the start of the frame's draw call to the moment its command buffer is committed</td><td>Every frame</td></tr>
               <tr><td>GPU time</td><td><code>gpuEndTime − gpuStartTime</code> of the frame's <code>MTLCommandBuffer</code>, reported by the GPU itself</td><td>Every frame, when the GPU finishes</td></tr>
               <tr><td>Target rate</td><td><code>min(view.preferredFramesPerSecond, screen.maximumFramesPerSecond)</code></td><td>Every frame</td></tr>
-              <tr><td>Material</td><td>The name of the material on screen, chosen by the game</td><td>Every frame</td></tr>
-              <tr><td>Reduced quality</td><td>Whether the game's own quality fallback is active for this frame</td><td>Every frame</td></tr>
+              <tr><td>Scene</td><td>A name for what is on screen, chosen by the app</td><td>Every frame</td></tr>
+              <tr><td>Reduced quality</td><td>Whether the app's own quality fallback, if it has one, is active for this frame</td><td>Every frame</td></tr>
               <tr><td>Memory</td><td><code>phys_footprint</code> from <code>task_info(TASK_VM_INFO)</code></td><td>Once a second</td></tr>
               <tr><td>Heat</td><td><code>ProcessInfo.thermalState</code>: nominal, fair, serious or critical</td><td>Once a second</td></tr>
               <tr><td>Daily summaries</td><td>Apple's MetricKit: launch time, hangs, crashes and hang call stacks</td><td>About once a day</td></tr>
@@ -211,18 +227,18 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
           </table></div>
 
           <div class="why">
-            <p><b>Why GPU time per material.</b> Frame time tells you <em>that</em> something is slow. GPU time split by material tells you <em>what</em>. Each material in the game is a different shader, so this points straight at the shader to optimize.</p>
-            <p><b>Why the target rate is capped by the display.</b> A game can ask for 120 fps on a phone whose screen only does 60. Judged against 120, every perfectly normal 16.7 ms frame would count as late. Capping by the screen's real maximum makes "late" mean late for this particular phone.</p>
+            <p><b>Why GPU time per scene.</b> Frame time tells you <em>that</em> something is slow. GPU time split by scene tells you <em>where</em>. In Opal Caress every material is a different shader, so it points straight at the shader to optimize.</p>
+            <p><b>Why the target rate is capped by the display.</b> An app can ask for 120 fps on a phone whose screen only does 60. Judged against 120, every perfectly normal 16.7 ms frame would count as late. Capping by the screen's real maximum makes "late" mean late for this particular phone.</p>
             <p><b>Why <code>phys_footprint</code>.</b> It is the number iOS itself uses to decide when to kill an app for using too much memory, so it is the one that matters, not the virtual size.</p>
           </div>
-          <p>Gaps of a second or more between frames are ignored. They mean the game was paused or in the background, not that a frame was slow.</p>
+          <p>Gaps of a second or more between frames are ignored. They mean the app was paused or in the background, not that a frame was slow.</p>
         </section>
 
         <section id="metrics">
           <h2>Metrics and formulas</h2>
 
           <h3>Frame budget</h3>
-          <p>At 60 frames per second each frame has 1000 / 60 = <strong>16.7 ms</strong>. Any work that doesn't fit makes the frame miss its slot on screen. The dashboard draws this budget as the dashed line on the charts and colours material tiles by how much of it they use.</p>
+          <p>At 60 frames per second each frame has 1000 / 60 = <strong>16.7 ms</strong>. Any work that doesn't fit makes the frame miss its slot on screen. The dashboard draws this budget as the dashed line on the charts and colours scene tiles by how much of it they use.</p>
 
           <h3>Dropped frame</h3>
           <div class="formula">dropped  =  interval &gt; 1.5 × target interval</div>
@@ -231,25 +247,25 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
 
           <h3>Hitch time, ms per second</h3>
           <div class="formula">hitch time  =  Σ (interval − target) over dropped frames  ÷  seconds played</div>
-          <p>For every dropped frame, how late it was beyond its own slot is added up, then divided by how long the game was played. The result is milliseconds of lateness per second of play. This is the "hitch time ratio" Apple uses for scrolling and animation performance, and it is the main number on the dashboard.</p>
+          <p>For every dropped frame, how late it was beyond its own slot is added up, then divided by how long the app was in use. The result is milliseconds of lateness per second of use. This is the "hitch time ratio" Apple uses for scrolling and animation performance, and it is the main number on the dashboard.</p>
           <div class="scale">
-            <div><b><i style="background:#fff7ee"></i>Under 5 ms/s</b><span>Smooth. Players don't notice.</span></div>
+            <div><b><i style="background:#fff7ee"></i>Under 5 ms/s</b><span>Smooth. People don't notice.</span></div>
             <div><b><i style="background:#ffb020"></i>5 to 10 ms/s</b><span>Noticeable. Occasional hitches.</span></div>
-            <div><b><i style="background:#ff5a1f"></i>Over 10 ms/s</b><span>Stuttering. Players feel it.</span></div>
+            <div><b><i style="background:#ff5a1f"></i>Over 10 ms/s</b><span>Stuttering. People feel it.</span></div>
           </div>
-          <div class="why"><p><b>Why hitch time instead of fps.</b> Average fps hides stutter. A game can run at 58 fps on average while freezing for 200 ms every few seconds, and players feel those freezes far more than the average. Hitch time counts only the lateness players actually see, and it's comparable between 60 Hz and 120 Hz phones.</p></div>
+          <div class="why"><p><b>Why hitch time instead of fps.</b> Average fps hides stutter. An app can run at 58 fps on average while freezing for 200 ms every few seconds, and people feel those freezes far more than the average. Hitch time counts only the lateness people actually see, and it's comparable between 60 Hz and 120 Hz phones.</p></div>
 
           <h3>Frame rate</h3>
           <div class="formula">fps  =  frames drawn  ÷  seconds played</div>
           <p>Counted, not estimated from an average frame time, so pauses inside a session don't distort it.</p>
 
           <h3>Percentiles: p50, p95, p99</h3>
-          <p>Within each 30-second window the frame times (and, separately, the GPU times) of a material are sorted and read by the nearest-rank method: p95 is the value that 95% of frames are faster than. p50 is the typical frame, p95 is the slow end players run into regularly, p99 and max are rare spikes.</p>
+          <p>Within each 30-second window the frame times (and, separately, the GPU times) of a scene are sorted and read by the nearest-rank method: p95 is the value that 95% of frames are faster than. p50 is the typical frame, p95 is the slow end people run into regularly, p99 and max are rare spikes.</p>
           <div class="why"><p><b>Why p95 and not the average.</b> Smoothness is decided by the slow frames, and the average is pulled down by the many fast ones. p95 is the standard measure for "how bad does it regularly get" while still ignoring a single freak frame.</p></div>
 
           <h3>Reduced quality share</h3>
           <div class="formula">reduced quality  =  frames drawn in the fallback mode  ÷  all frames</div>
-          <p>Shows how often the game had to lower its effects to keep up, which is a cost the frame numbers alone would hide.</p>
+          <p>Shows how often the app had to lower its quality to keep up, which is a cost the frame numbers alone would hide.</p>
         </section>
 
         <section id="report">
@@ -276,7 +292,7 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
     }]
   }
 }</code></pre>
-          <div class="why"><p><b>Why summaries, not raw frames.</b> A minute of play is 3,600 to 7,200 frames. Sending them all would cost players data and battery. A 30-second summary is under a kilobyte and keeps everything the dashboard needs.</p></div>
+          <div class="why"><p><b>Why summaries, not raw frames.</b> A minute of use is 3,600 to 7,200 frames. Sending them all would cost people data and battery. A 30-second summary is under a kilobyte and keeps everything the dashboard needs.</p></div>
           <p>MetricKit data travels the same way with <code>kind</code> set to <code>metrickit</code> or <code>diagnostic</code>. It is stored for crash and hang investigation and isn't shown on the dashboard yet.</p>
         </section>
 
@@ -304,16 +320,16 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
               <tr><td>Frame and GPU p95</td><td>Average of the windows' p95, weighted by frame count</td></tr>
               <tr><td>Dropped frames</td><td>Sum</td></tr>
               <tr><td>Reduced quality</td><td>Average of the windows' share, weighted by frame count</td></tr>
-              <tr><td>Playing now</td><td>Sessions that sent a report in the last 2 minutes</td></tr>
+              <tr><td>Active now</td><td>Sessions that sent a report in the last 2 minutes</td></tr>
             </tbody>
           </table></div>
-          <div class="why"><p><b>Why p95 is a weighted average.</b> Percentiles can't be combined exactly from summaries: the p95 of a day isn't the average of the p95s of its windows. Getting it exactly would mean storing every frame. Weighting each window by its number of frames is the usual approximation, and it is accurate enough to spot trends, compare builds and rank materials. If exact percentiles become necessary, the report can carry a small histogram instead.</p></div>
+          <div class="why"><p><b>Why p95 is a weighted average.</b> Percentiles can't be combined exactly from summaries: the p95 of a day isn't the average of the p95s of its windows. Getting it exactly would mean storing every frame. Weighting each window by its number of frames is the usual approximation, and it is accurate enough to spot trends, compare builds and rank scenes. If exact percentiles become necessary, the report can carry a small histogram instead.</p></div>
 
           <h3>Time buckets</h3>
           <p>For the over-time chart, reports are grouped into 1-minute buckets for the last hour, 10-minute buckets for 24 hours, and 1-hour buckets for 7 and 30 days. Each point is one bucket, so a range with a single bucket shows a single point.</p>
 
           <h3>Minutes into a session</h3>
-          <p>For the heat chart each report is placed by how many minutes passed since that session's first report. "Running hot" is the share of play time in those minutes whose worst heat state was serious or critical.</p>
+          <p>For the heat chart each report is placed by how many minutes passed since that session's first report. "Running hot" is the share of time in those minutes whose worst heat state was serious or critical.</p>
         </section>
 
         <section id="dashboard">
@@ -322,15 +338,15 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
             <thead><tr><th>Block</th><th>What it shows</th></tr></thead>
             <tbody>
               <tr><td>Hitch gauge</td><td>Overall hitch time for the selected apps and range, on the 0 to 20+ ms/s scale</td></tr>
-              <tr><td>Key numbers</td><td>Playing now, sessions and devices, frames measured and play time, fps, frame time p95</td></tr>
+              <tr><td>Key numbers</td><td>Active now, sessions and devices, frames measured and time in use, fps, frame time p95</td></tr>
               <tr><td>Apps</td><td>The same numbers per app, when more than one app reports</td></tr>
               <tr><td>Health checks</td><td>The rules below, run on every refresh</td></tr>
               <tr><td>Over time</td><td>Frame p95, fps or hitch time per time bucket, with the budget and threshold lines</td></tr>
-              <tr><td>GPU per material</td><td>GPU p95 per material against the 16.7 ms frame</td></tr>
-              <tr><td>Material × device</td><td>GPU p95 for each material on each phone model. Tile colour is the share of the 16.7 ms frame it uses</td></tr>
+              <tr><td>GPU per scene</td><td>GPU p95 per scene against the 16.7 ms frame</td></tr>
+              <tr><td>Scene × device</td><td>GPU p95 for each scene on each phone model. Tile colour is the share of the 16.7 ms frame it uses</td></tr>
               <tr><td>Heat over a session</td><td>Hitch time and share of hot phones by minute since launch. When both rise together, the phone is throttling</td></tr>
               <tr><td>Build comparison</td><td>Any two app versions side by side</td></tr>
-              <tr><td>Latest reports</td><td>The 15 newest reports, showing the material played most in each</td></tr>
+              <tr><td>Latest reports</td><td>The 15 newest reports, showing the scene used most in each</td></tr>
             </tbody>
           </table></div>
           <p>The dashboard refreshes every 10 seconds while the tab is visible. Phone model codes such as <code>iPhone15,2</code> are turned into names on the page.</p>
@@ -345,24 +361,24 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
               <tr><td>Stutter</td><td>Overall hitch time over 10 ms/s</td><td>Critical</td></tr>
               <tr><td>Noticeable hitches</td><td>Overall hitch time from 5 to 10 ms/s</td><td>Warning</td></tr>
               <tr><td>Slow frames</td><td>Frame p95 over 1.5 × 16.7 ms (25 ms)</td><td>Warning</td></tr>
-              <tr><td>Misses the GPU budget</td><td>A material's GPU p95 over 16.7 ms</td><td>Critical</td></tr>
-              <tr><td>Close to the budget</td><td>A material's GPU p95 over 75% of 16.7 ms (12.5 ms)</td><td>Warning</td></tr>
-              <tr><td>Slow on one phone</td><td>Frame p95 over 25 ms for a material on one phone model, with more than 300 frames measured</td><td>Warning</td></tr>
-              <tr><td>Phones heat up</td><td>In some minute of play, 30% or more of play time is serious or critical heat</td><td>Warning</td></tr>
+              <tr><td>Misses the GPU budget</td><td>A scene's GPU p95 over 16.7 ms</td><td>Critical</td></tr>
+              <tr><td>Close to the budget</td><td>A scene's GPU p95 over 75% of 16.7 ms (12.5 ms)</td><td>Warning</td></tr>
+              <tr><td>Slow on one phone</td><td>Frame p95 over 25 ms for a scene on one phone model, with more than 300 frames measured</td><td>Warning</td></tr>
+              <tr><td>Phones heat up</td><td>In some minute of a session, 30% or more of the time is serious or critical heat</td><td>Warning</td></tr>
               <tr><td>Regression</td><td>The newest version's hitch time or frame p95 is more than 10% worse than the previous version's</td><td>Warning</td></tr>
             </tbody>
           </table></div>
-          <div class="why"><p><b>Why 75% for GPU.</b> The GPU isn't the only thing in a frame: the CPU, the compositor and the display all need their share. A material that already takes three quarters of the frame on the GPU has almost no margin left on a slower or hotter phone.</p></div>
+          <div class="why"><p><b>Why 75% for GPU.</b> The GPU isn't the only thing in a frame: the CPU, the compositor and the display all need their share. A scene that already takes three quarters of the frame on the GPU has almost no margin left on a slower or hotter phone.</p></div>
         </section>
 
         <section id="cost">
-          <h2>Cost inside the game</h2>
-          <p>A monitor that slows the game down measures itself. OctiMonitor is built to stay out of the way:</p>
+          <h2>Cost inside the app</h2>
+          <p>A monitor that slows the app down measures itself. OctiMonitor is built to stay out of the way:</p>
           <ul>
             <li><strong>No memory allocation per frame.</strong> Frame and GPU times go into fixed-size ring buffers created up front. Recording a frame is a lock, one lookup and a few array writes.</li>
             <li><strong>Sorting happens rarely.</strong> Percentiles are calculated only when a report is built (every 30 s) or the debug overlay redraws, and the sort works in place.</li>
             <li><strong>System readings once a second.</strong> Memory and heat aren't read on every frame.</li>
-            <li><strong>Bounded.</strong> At most 32 materials are tracked separately; anything beyond goes into one "other" bucket, so a bug can't grow memory without limit.</li>
+            <li><strong>Bounded.</strong> At most 32 scenes are tracked separately; anything beyond goes into one "other" bucket, so a bug can't grow memory without limit.</li>
             <li><strong>Network off the main thread.</strong> One batched request per report, a 10-second timeout and no retries in a loop.</li>
           </ul>
         </section>
@@ -371,7 +387,7 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
           <h2>Known limits</h2>
           <ul>
             <li><strong>Percentiles over long ranges are approximate</strong>, as explained above.</li>
-            <li><strong>A window keeps the latest 4,096 frames per material</strong>, about 34 seconds at 120 Hz, so the full 30-second window always fits.</li>
+            <li><strong>A window keeps the latest 4,096 frames per scene</strong>, about 34 seconds at 120 Hz, so the full 30-second window always fits.</li>
             <li><strong>Heat has four levels.</strong> iOS doesn't give apps a temperature, only nominal, fair, serious and critical.</li>
             <li><strong>One command buffer per frame is assumed</strong> for GPU time. A renderer that splits a frame into several buffers should add their times together.</li>
             <li><strong>Up to about 40 seconds of delay</strong> between a frame and the dashboard.</li>

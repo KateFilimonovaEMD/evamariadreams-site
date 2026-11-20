@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>OctiMonitor · Live performance from real phones</title>
-  <meta name="description" content="Live real-user performance of our iOS apps: frame pacing, GPU time, heat and memory, measured on players' phones.">
+  <meta name="description" content="Live real-user performance of our iOS apps: frame pacing, GPU time, heat and memory, measured on real people's phones.">
   <meta name="robots" content="noindex">
   <meta name="theme-color" content="#000000">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -209,7 +209,7 @@
     .app-card-foot { margin-top: 12px; font-size: 13px; color: var(--ash); display: flex; justify-content: space-between; gap: 8px; }
     .combined-note { display: inline-block; margin-left: 8px; font-size: 12px; font-weight: 500; color: var(--amber); font-family: var(--text); letter-spacing: 0; vertical-align: baseline; }
 
-    /* Material x device matrix */
+    /* Scene x device matrix */
     .matrix-wrap { overflow: visible; margin: -12px -24px -26px; padding: 18px 24px 40px; }  /* room for tile glows */
     .matrix-wrap.scrolls { overflow-x: auto; }
     .matrix { display: grid; gap: 10px; align-items: stretch; min-width: max-content; }
@@ -434,11 +434,11 @@
     <section class="hero">
       <div class="hero-copy">
         <h1 class="reveal" style="--d:0">Every frame, measured on real phones.</h1>
-        <p class="intro reveal" style="--d:1">Live performance of our iOS apps as players actually experience it: how smooth each frame is, how hard the GPU works for every material, and what happens when the phone heats up. <a class="intro-link" href="docs/">How every number is measured</a></p>
+        <p class="intro reveal" style="--d:1">Live performance of our iOS apps as people actually experience them: how smooth each frame is, how hard the GPU works in each part of an app, and what happens when the phone heats up. <a class="intro-link" href="docs/">How every number is measured</a></p>
       </div>
 
       <div class="gauge glass reveal" style="--d:2" aria-labelledby="gLabel">
-        <div class="gauge-label" id="gLabel">Hitch time, the stutter players feel</div>
+        <div class="gauge-label" id="gLabel">Hitch time, the stutter people feel</div>
         <div class="gauge-body">
         <div class="gauge-value"><strong class="num" id="gValue"><span class="gauge-empty">No data yet</span></strong><span id="gUnit" hidden>ms per second</span></div>
         <div class="gauge-track" aria-hidden="true"><div class="gauge-pin idle" id="gPin"></div></div>
@@ -466,7 +466,7 @@
 
     <main id="content" hidden>
       <section class="strip glass reveal" style="--d:4" aria-label="Summary">
-        <div class="kpi"><div class="kpi-label">Playing now</div><div class="kpi-value num" id="kLive">–</div><div class="kpi-sub">in the last 2 min</div></div>
+        <div class="kpi"><div class="kpi-label">Active now</div><div class="kpi-value num" id="kLive">–</div><div class="kpi-sub">in the last 2 min</div></div>
         <div class="kpi"><div class="kpi-label">Sessions</div><div class="kpi-value num" id="kSessions">–</div><div class="kpi-sub" id="kDevices">–</div></div>
         <div class="kpi"><div class="kpi-label">Frames measured</div><div class="kpi-value num" id="kFrames">–</div><div class="kpi-sub" id="kPlay">–</div></div>
         <div class="kpi"><div class="kpi-label">Average frame rate</div><div class="kpi-value num" id="kFps">–</div><div class="kpi-sub">frames per second</div></div>
@@ -476,7 +476,7 @@
       <section class="grid" id="appsSection" hidden>
         <article class="panel glass">
           <h2>Apps</h2>
-          <p class="note" style="margin-bottom:0">Every app with OctiMonitor reports into the same backend. Pick one to see its own materials, phones and builds.</p>
+          <p class="note" style="margin-bottom:0">Every app with OctiMonitor reports into the same backend. Pick one to see its own scenes, phones and builds.</p>
           <div class="apps" id="apps"></div>
         </article>
       </section>
@@ -514,22 +514,22 @@
 
       <section class="grid split" id="pMaterials">
         <article class="panel glass">
-          <h2>GPU cost per material<span class="combined-note" data-combined hidden>all apps combined</span></h2>
-          <p class="note">How long the GPU works on one frame of each material, p95. Click a bar to inspect it.</p>
-          <div class="chart" id="cScenes" role="img" aria-label="Bar chart of GPU time per material"></div>
+          <h2>GPU cost per scene<span class="combined-note" data-combined hidden>all apps combined</span></h2>
+          <p class="note">How long the GPU works on one frame of each scene, p95. A scene is whatever an app splits its numbers by: a material, a level, a tool or a screen. Click a bar to inspect it.</p>
+          <div class="chart" id="cScenes" role="img" aria-label="Bar chart of GPU time per scene"></div>
           <details><summary>Show as table</summary><div class="table-wrap"><table id="scenesTable"></table></div></details>
         </article>
         <aside class="panel glass inspector" id="inspector" aria-live="polite">
           <h2>Inspector</h2>
-          <div id="inspectorBody"><p class="empty">Select a material or a phone in any chart or table to see its breakdown here.</p></div>
+          <div id="inspectorBody"><p class="empty">Select a scene or a phone in any chart or table to see its breakdown here.</p></div>
         </aside>
       </section>
 
       <section class="grid">
         <article class="panel glass" id="pHeatmap">
-          <h2>Material × device<span class="combined-note" data-combined hidden>all apps combined</span></h2>
-          <p class="note">GPU time p95 for each material on each phone model seen, and how much of the 16.7&nbsp;ms frame it uses. Click a tile, a material or a phone to inspect it.</p>
-          <div class="matrix-wrap"><div class="matrix" id="cHeat" role="grid" aria-label="GPU time by material and device"></div></div>
+          <h2>Scene × device<span class="combined-note" data-combined hidden>all apps combined</span></h2>
+          <p class="note">GPU time p95 for each scene on each phone model seen, and how much of the 16.7&nbsp;ms frame it uses. Click a tile, a scene or a phone to inspect it.</p>
+          <div class="matrix-wrap"><div class="matrix" id="cHeat" role="grid" aria-label="GPU time by scene and device"></div></div>
           <div class="mx-legend" aria-hidden="true"><span>headroom</span><span class="scale"></span><span>over budget</span></div>
         </article>
       </section>
@@ -566,7 +566,7 @@
       <section class="grid">
         <article class="panel glass">
           <h2>Latest reports</h2>
-          <p class="note">One row per 30-second window from a real device, with the material played most. New rows light up as they arrive.</p>
+          <p class="note">One row per 30-second window from a real device, with the scene played most. New rows light up as they arrive.</p>
           <div class="table-wrap"><table id="recentTable"></table></div>
         </article>
       </section>
@@ -579,11 +579,11 @@
         <div class="pipe">
           <div class="pipe-line" aria-hidden="true"></div>
           <div class="stage" style="--i:0"><span class="stage-num" aria-hidden="true">1</span><b>Measure</b><span>Every frame the app records frame time, CPU time and GPU time straight from Metal.</span><em class="tag" style="font-style:normal">0 allocations per frame</em></div>
-          <div class="stage" style="--i:1"><span class="stage-num" aria-hidden="true">2</span><b>Summarize</b><span>Frames become p50, p95 and p99, dropped frames, hitch time, memory and heat per material.</span><em class="tag" style="font-style:normal">every 30 s</em></div>
+          <div class="stage" style="--i:1"><span class="stage-num" aria-hidden="true">2</span><b>Summarize</b><span>Frames become p50, p95 and p99, dropped frames, hitch time, memory and heat per scene.</span><em class="tag" style="font-style:normal">every 30 s</em></div>
           <div class="stage" style="--i:2"><span class="stage-num" aria-hidden="true">3</span><b>Send</b><span>One small anonymous report goes to the backend. The app's key can only add reports.</span><em class="tag" style="font-style:normal">no identifiers</em></div>
           <div class="stage" style="--i:3"><span class="stage-num" aria-hidden="true">4</span><b>Aggregate</b><span>This page reads totals and averages through a single read-only function.</span><em class="tag" style="font-style:normal">live, every 10 s</em></div>
         </div>
-        <p class="note pipe-note">p95 per material and over time is the frame-weighted mean of each 30-second window's p95. Hitch time counts only frames that missed their display slot: under 5&nbsp;ms/s is smooth, 5–10 is noticeable, above 10 is stutter.</p>
+        <p class="note pipe-note">p95 per scene and over time is the frame-weighted mean of each 30-second window's p95. Hitch time counts only frames that missed their display slot: under 5&nbsp;ms/s is smooth, 5–10 is noticeable, above 10 is stutter.</p>
       </article>
     </section>
 
@@ -626,9 +626,9 @@
     const APP_NAMES = { "com.evamariadreams.opalcaress": "Opal Caress", "com.evamariadreams.octisculpt": "Octi Sculpt", "com.evamariadreams.octiflow": "Octi Flow" };
     const appName = id => APP_NAMES[id] || String(id).split(".").pop().replace(/[-_]/g, " ").replace(/^octi/i, "Octi ").replace(/\b\w/g, c => c.toUpperCase()).trim();
     const METRICS = {
-      frame_p95: { label: "Frame p95", unit: "ms", digits: 1, note: "p95 frame time across every session. The dashed line is the 60 fps budget of 16.7 ms: above it, players start to feel stutter.", ref: [{ y: BUDGET_MS, label: "60 fps budget" }] },
+      frame_p95: { label: "Frame p95", unit: "ms", digits: 1, note: "p95 frame time across every session. The dashed line is the 60 fps budget of 16.7 ms: above it, people start to feel stutter.", ref: [{ y: BUDGET_MS, label: "60 fps budget" }] },
       fps: { label: "FPS", unit: "fps", digits: 1, note: "Average frame rate across every session. The dashed line is the 60 fps target.", ref: [{ y: 60, label: "60 fps target" }] },
-      hitch: { label: "Hitch time", unit: "ms/s", digits: 1, note: "Milliseconds of lateness per second of play. Under 5 is smooth, above 10 players feel stutter.", ref: [{ y: 5, label: "noticeable" }, { y: 10, label: "stutter" }] }
+      hitch: { label: "Hitch time", unit: "ms/s", digits: 1, note: "Milliseconds of lateness per second of use. Under 5 is smooth, above 10 people feel stutter.", ref: [{ y: 5, label: "noticeable" }, { y: 10, label: "stutter" }] }
     };
 
     const params = new URLSearchParams(location.search);
@@ -756,7 +756,7 @@
         const t = (x && x.totals) || {}, o = (x && x.overall) || {}, v = verdict(o.hitch);
         const live = t.live_sessions > 0;
         return `<button type="button" class="app-card" data-app="${esc(a)}">
-          <div class="app-card-head"><span class="app-card-name">${esc(appName(a))}</span><span class="app-card-live" style="--c:${live ? "var(--online)" : ASH2}">${live ? `${int(t.live_sessions)} playing` : "Idle"}</span></div>
+          <div class="app-card-head"><span class="app-card-name">${esc(appName(a))}</span><span class="app-card-live" style="--c:${live ? "var(--online)" : ASH2}">${live ? `${int(t.live_sessions)} active` : "Idle"}</span></div>
           <div class="app-card-stats"><div><span>FPS</span><b>${fmt(o.fps)}</b></div><div><span>Frame p95</span><b>${fmt(o.frame_p95)}</b></div><div><span>Hitch ms/s</span><b>${fmt(o.hitch)}</b></div></div>
           <div class="app-card-foot"><span>${int(t.sessions || 0)} session${t.sessions === 1 ? "" : "s"} on ${int(t.devices || 0)} device${t.devices === 1 ? "" : "s"}</span>${(t.reports || 0) > 0 ? heatTag(v[0], v[1]) : `<span class="muted">No data in range</span>`}</div>
         </button>`;
@@ -823,7 +823,7 @@
       $("kDevices").textContent = `on ${int(t.devices)} device${t.devices === 1 ? "" : "s"}`;
       tween($("kFrames"), o.frames, 0);
       const minutes = (o.seconds || 0) / 60, m = Math.max(1, Math.round(minutes));
-      $("kPlay").textContent = minutes >= 90 ? `${fmt(minutes / 60, 1)} hours of play` : `${m} minute${m === 1 ? "" : "s"} of play`;
+      $("kPlay").textContent = minutes >= 90 ? `${fmt(minutes / 60, 1)} hours of use` : `${m} minute${m === 1 ? "" : "s"} of use`;
       tween($("kFps"), o.fps, 1);
       tween($("kP95"), o.frame_p95, 1, "<small>ms</small>");
 
@@ -859,13 +859,13 @@
       $("gPin").style.left = `${none ? 0 : Math.min(1, Math.max(0, h / 20)) * 100}%`;
       const v = verdict(h);
       $("gVerdict").innerHTML = none ? "Waiting for the first reports."
-        : `${heatTag(v[0], v[1])}&nbsp; ${h < 5 ? "Late frames are rare enough that players don't notice." : h <= 10 ? "Occasional hitches players can notice." : "Players feel the stutter."}`;
+        : `${heatTag(v[0], v[1])}&nbsp; ${h < 5 ? "Late frames are rare enough that people don't notice." : h <= 10 ? "Occasional hitches people can notice." : "People feel the stutter."}`;
     }
 
     // Health checks: simple, explainable rules.
     function runChecks(d) {
       const out = [], o = d.overall || {};
-      if (o.hitch > 10) out.push({ sev: "critical", title: `Stutter across all play: ${fmt(o.hitch)} ms/s`, detail: "Above the 10 ms/s line where players feel it.", go: "pTimeline", metric: "hitch" });
+      if (o.hitch > 10) out.push({ sev: "critical", title: `Stutter across all sessions: ${fmt(o.hitch)} ms/s`, detail: "Above the 10 ms/s line where people feel it.", go: "pTimeline", metric: "hitch" });
       else if (o.hitch > 5) out.push({ sev: "warning", title: `Noticeable hitches: ${fmt(o.hitch)} ms/s`, detail: "Between 5 and 10 ms/s overall.", go: "pTimeline", metric: "hitch" });
       if (o.frame_p95 > BUDGET_MS * 1.5) out.push({ sev: "warning", title: `Frame p95 is ${fmt(o.frame_p95)} ms`, detail: `More than 1.5× the ${fmt(BUDGET_MS)} ms budget.`, go: "pTimeline", metric: "frame_p95" });
       for (const s of d.scenes || []) {
@@ -901,7 +901,7 @@
       sum.style.setProperty("--period", crit ? "2.2s" : "3.6s");
       $("checks").innerHTML = list.length
         ? list.map((c, i) => `<li class="check clickable sev-${c.sev}" tabindex="0" data-i="${i}"><span class="sev" style="--c:${SEV[c.sev][1]}">${SEV[c.sev][0]}</span><div><div class="check-title">${esc(c.title)}</div><div class="check-detail">${esc(c.detail)}</div></div><span class="check-go">Inspect</span></li>`).join("")
-        : `<li class="check"><span class="sev" style="--c:${WHITE}">Passing</span><div><div class="check-title">Within budget</div><div class="check-detail">Every material fits the GPU budget, hitches are under 5 ms/s and no regression against the previous build.</div></div><span></span></li>`;
+        : `<li class="check"><span class="sev" style="--c:${WHITE}">Passing</span><div><div class="check-title">Within budget</div><div class="check-detail">Every scene fits the GPU budget, hitches are under 5 ms/s and no regression against the previous build.</div></div><span></span></li>`;
       // Phase every pulse to the page clock so rebuilt rows continue the same rhythm instead of restarting
       const now = performance.now() / 1000;
       $("checks").querySelectorAll(".check.sev-critical, .check.sev-warning").forEach(el => {
@@ -1011,7 +1011,7 @@
 
       const sorted = scenes.slice().sort((a, b) => (b.gpu_p95 || 0) - (a.gpu_p95 || 0));
       $("scenesTable").innerHTML =
-        `<thead><tr><th>Material</th><th class="r">FPS</th><th class="r">Frame p95</th><th class="r">GPU p50</th><th class="r">GPU p95</th><th class="r">Hitch</th><th class="r">Dropped</th></tr></thead><tbody>` +
+        `<thead><tr><th>Scene</th><th class="r">FPS</th><th class="r">Frame p95</th><th class="r">GPU p50</th><th class="r">GPU p95</th><th class="r">Hitch</th><th class="r">Dropped</th></tr></thead><tbody>` +
         sorted.map(r => `<tr class="pick${pick === r.scene ? " selected" : ""}" data-scene="${esc(r.scene)}" tabindex="0"><td>${esc(r.scene)}</td><td class="r">${fmt(r.fps)}</td><td class="r">${fmt(r.frame_p95)} ms</td><td class="r">${fmt(r.gpu_p50)} ms</td><td class="r">${fmt(r.gpu_p95)} ms</td><td class="r">${fmt(r.hitch)} ms/s</td><td class="r">${int(r.dropped)}</td></tr>`).join("") +
         `</tbody>`;
       bindPicks($("scenesTable"));
@@ -1118,11 +1118,11 @@
       const d = state.data; if (!d) return;
       const { scene, device } = state.sel;
       if (!scene && !device) {
-        body.innerHTML = `<p class="empty">Select a material or a phone in any chart or table to see its breakdown here.</p>`;
+        body.innerHTML = `<p class="empty">Select a scene or a phone in any chart or table to see its breakdown here.</p>`;
         return;
       }
       const cells = d.device_scene || [];
-      const chips = `<div class="chips">${scene ? `<span class="chip">${esc(scene)}<button type="button" data-clear="scene" aria-label="Clear material">×</button></span>` : ""}${device ? `<span class="chip">${esc(deviceName(device))}<button type="button" data-clear="device" aria-label="Clear phone">×</button></span>` : ""}</div>`;
+      const chips = `<div class="chips">${scene ? `<span class="chip">${esc(scene)}<button type="button" data-clear="scene" aria-label="Clear scene">×</button></span>` : ""}${device ? `<span class="chip">${esc(deviceName(device))}<button type="button" data-clear="device" aria-label="Clear phone">×</button></span>` : ""}</div>`;
       let html = chips;
 
       if (scene && device) {
@@ -1140,7 +1140,7 @@
           html += `<div class="mini"><div><span>GPU p95</span><b>${fmt(s.gpu_p95)}</b></div><div><span>Frame p95</span><b>${fmt(s.frame_p95)}</b></div><div><span>FPS</span><b>${fmt(s.fps)}</b></div>
             <div><span>Hitch ms/s</span><b>${fmt(s.hitch)}</b></div><div><span>Dropped</span><b>${int(s.dropped)}</b></div><div><span>Reduced quality</span><b>${fmt((s.degraded || 0) * 100, 0)}%</b></div></div>
             ${budgetBar(s.gpu_p95)}
-            <p class="hint">${compareText(s.gpu_p95, avgAll, "the average material")}</p>
+            <p class="hint">${compareText(s.gpu_p95, avgAll, "the average scene")}</p>
             <div class="rows"><h3>By phone, GPU p95</h3>${rowbars(per.map(r => ({ name: deviceName(r.device), value: r.gpu_p95, key: r.device })), Math.max(BUDGET_MS, ...per.map(r => r.gpu_p95)), "ms")}</div>`;
           setTimeout(() => body.querySelectorAll(".rows .rowbar").forEach((el, i) => { const go = () => select({ scene, device: per[i].device }); el.addEventListener("click", go); el.addEventListener("keydown", e => { if (e.key === "Enter") go(); }); }), 0);
         } else html += `<p class="empty">No data for ${esc(scene)} in the selected range.</p>`;
@@ -1148,7 +1148,7 @@
         const per = cells.filter(r => r.device === device).sort((a, b) => b.gpu_p95 - a.gpu_p95);
         const frames = per.reduce((n, r) => n + (r.frames || 0), 0);
         html += per.length ? `<div class="mini"><div><span>GPU p95</span><b>${fmt(weighted(per, "gpu_p95"))}</b></div><div><span>Frame p95</span><b>${fmt(weighted(per, "frame_p95"))}</b></div><div><span>Frames</span><b>${int(frames)}</b></div></div>
-          <div class="rows"><h3>By material, GPU p95</h3>${rowbars(per.map(r => ({ name: r.scene, value: r.gpu_p95 })), Math.max(BUDGET_MS, ...per.map(r => r.gpu_p95)), "ms")}</div>` : `<p class="empty">No data for this phone in the selected range.</p>`;
+          <div class="rows"><h3>By scene, GPU p95</h3>${rowbars(per.map(r => ({ name: r.scene, value: r.gpu_p95 })), Math.max(BUDGET_MS, ...per.map(r => r.gpu_p95)), "ms")}</div>` : `<p class="empty">No data for this phone in the selected range.</p>`;
         setTimeout(() => body.querySelectorAll(".rows .rowbar").forEach((el, i) => { const go = () => select({ scene: per[i].scene, device }); el.addEventListener("click", go); el.addEventListener("keydown", e => { if (e.key === "Enter") go(); }); }), 0);
       }
       body.innerHTML = html;
@@ -1223,7 +1223,7 @@
         return s < 60 ? `${s}s ago` : s < 3600 ? `${Math.floor(s / 60)}m ago` : s < 86400 ? `${Math.floor(s / 3600)}h ago` : new Date(iso).toLocaleDateString("en-GB"); };
       const key = r => `${r.at}|${r.device}|${r.scene}`;
       $("recentTable").innerHTML =
-        `<thead><tr><th>When</th><th>Device</th><th>Material</th><th class="r hide-sm">FPS</th><th class="r hide-sm">Frame p95</th><th class="r">GPU p95</th><th class="hide-sm">Heat</th><th class="hide-sm">Build</th></tr></thead><tbody>` +
+        `<thead><tr><th>When</th><th>Device</th><th>Scene</th><th class="r hide-sm">FPS</th><th class="r hide-sm">Frame p95</th><th class="r">GPU p95</th><th class="hide-sm">Heat</th><th class="hide-sm">Build</th></tr></thead><tbody>` +
         rows.slice(0, 12).map(r => { const th = THERMAL[r.thermal] || ["Unknown", ASH2];
           const fresh = !state.firstLoad && !state.seenRecent.has(key(r));
           return `<tr class="pick${fresh ? " fresh" : ""}" data-scene="${esc(r.scene)}" data-device="${esc(r.device)}" tabindex="0"><td class="muted">${ago(r.at)}</td><td>${esc(deviceName(r.device))}</td><td>${esc(r.scene)}</td><td class="r hide-sm">${fmt(r.fps)}</td><td class="r hide-sm">${fmt(r.frame_p95)} ms</td><td class="r">${fmt(r.gpu_p95)} ms</td><td class="hide-sm">${heatTag(th[0], th[1])}</td><td class="muted hide-sm">${esc(r.version)}</td></tr>`; }).join("") +
@@ -1236,9 +1236,9 @@
     function exportCsv() {
       const d = state.data; if (!d) return;
       const q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-      const lines = ["section,material,device,frames,fps,frame_p95_ms,gpu_p50_ms,gpu_p95_ms,hitch_ms_per_s,dropped"];
-      for (const s of d.scenes || []) lines.push(["material", s.scene, "", s.frames, s.fps, s.frame_p95, s.gpu_p50, s.gpu_p95, s.hitch, s.dropped].map(q).join(","));
-      for (const c of d.device_scene || []) lines.push(["material_device", c.scene, deviceName(c.device), c.frames, "", c.frame_p95, "", c.gpu_p95, "", ""].map(q).join(","));
+      const lines = ["section,scene,device,frames,fps,frame_p95_ms,gpu_p50_ms,gpu_p95_ms,hitch_ms_per_s,dropped"];
+      for (const s of d.scenes || []) lines.push(["scene", s.scene, "", s.frames, s.fps, s.frame_p95, s.gpu_p50, s.gpu_p95, s.hitch, s.dropped].map(q).join(","));
+      for (const c of d.device_scene || []) lines.push(["scene_device", c.scene, deviceName(c.device), c.frames, "", c.frame_p95, "", c.gpu_p95, "", ""].map(q).join(","));
       for (const v of d.versions || []) lines.push(["build", "", "", "", v.fps, v.frame_p95, "", v.gpu_p95, v.hitch, ""].map(q).join(",").replace(/^build,,/, `build,${q(appName(v.app) + " " + v.version)},`));
       const blob = new Blob([lines.join("\n")], { type: "text/csv" });
       const a = document.createElement("a");
