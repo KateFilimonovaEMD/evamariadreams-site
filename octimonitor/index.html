@@ -928,11 +928,19 @@
       const c = chart("cTimeline"); if (!c) return;
       const rows = state.data.timeline || [];
       const m = METRICS[state.metric];
-      $("timelineNote").textContent = m.note;
       const x = rows.map(r => timeLabel(r.t));
+      // A line needs two windows. With one, show the point with its value and say why there's no line yet.
+      const single = rows.length === 1;
+      $("timelineNote").textContent = single
+        ? `${m.note} Only one reporting window in this range so far (${x[0]}), so there is a single point; the line appears as more reports arrive.`
+        : m.note;
       // Same headroom rule as the axis, used to decide whether threshold labels have room of their own
       const values = rows.map(r => r[state.metric]).filter(v => v != null);
-      const top = Math.ceil(Math.max((values.length ? Math.max(...values) : 0) * 1.18, ...m.ref.map(r => r.y * 1.1)));
+      const rawTop = Math.max((values.length ? Math.max(...values) : 0) * 1.18, ...m.ref.map(r => r.y * 1.1), 1);
+      // Round the top up to a whole tick so the last axis label never crowds the one below it (11 -> 15, 39 -> 40)
+      const mag = Math.pow(10, Math.floor(Math.log10(rawTop / 5)));
+      const step = [1, 2, 5, 10].map(k => k * mag).find(v => v >= rawTop / 5);
+      const top = Math.ceil(rawTop / step) * step;
       const close = m.ref.length > 1 && (m.ref[m.ref.length - 1].y - m.ref[0].y) / top < 0.08;
       const refLines = close
         ? m.ref.map((r, i) => ({ yAxis: r.y, label: i === m.ref.length - 1 ? { formatter: m.ref.map(q => `${q.label} ${q.y}`).join(" · "), position: "insideEndTop" } : { show: false } }))
@@ -949,11 +957,12 @@
           return `<b>${esc(x[p[0].dataIndex])}</b><br>${m.label} <b>${fmt(r[state.metric], m.digits)} ${m.unit}</b><br><span style="color:${ASH}">Frame p95 ${fmt(r.frame_p95)} ms, ${fmt(r.fps)} fps, hitch ${fmt(r.hitch)} ms/s</span>`;
         } }),
         dataZoom: [{ type: "inside", start: zoom.start, end: zoom.end, zoomOnMouseWheel: true, moveOnMouseMove: true }],
-        xAxis: catAxis({ data: x, boundaryGap: false }),
+        xAxis: catAxis({ data: x, boundaryGap: single }),
         // Headroom above the highest point so the line's glow never touches the top edge
-        yAxis: valueAxis({ min: 0, max: top || null, axisLabel: { color: ASH2, formatter: `{value} ${m.unit}` } }),
+        yAxis: valueAxis({ min: 0, max: top, interval: step, axisLabel: { color: ASH2, formatter: `{value} ${m.unit}` } }),
         series: [{
-          type: "line", data: rows.map(r => r[state.metric]), smooth: 0.45, smoothMonotone: "x", showSymbol: rows.length < 30, symbolSize: 9,
+          type: "line", data: rows.map(r => r[state.metric]), smooth: 0.45, smoothMonotone: "x", showSymbol: rows.length < 30, symbolSize: single ? 14 : 9,
+          label: { show: single, position: "top", distance: 12, color: WHITE, fontWeight: 600, fontSize: 13, formatter: p => `${fmt(p.value, m.digits)} ${m.unit}` },
           lineStyle: Object.assign({ width: 3, color: grad([0, 0, 1, 0], [[0, AMBER], [1, EMBER]]), cap: "round", join: "round" }, glow("rgba(255,90,31,.55)", 18)),
           itemStyle: { color: "#fff1d6", borderColor: EMBER, borderWidth: 3 },
           emphasis: { scale: 1.6, itemStyle: { color: WHITE, borderColor: AMBER, borderWidth: 3, shadowBlur: 20, shadowColor: "rgba(255,176,32,.8)" } },
