@@ -268,6 +268,14 @@
     .pair { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px; }
     .pair > *, .grid > * { min-width: 0; }
     .subhead { font-size: 14px; color: var(--ash); margin: 4px 0 0; }
+    /* Session heat before there's a trend to show */
+    .heat-early { margin-top: 20px; }
+    .early-track { position: relative; height: 6px; border-radius: 999px; background: rgba(255,247,238,.07); overflow: hidden; }
+    .early-track i { position: absolute; inset: 0 auto 0 0; width: var(--w, 0%); border-radius: inherit; background: linear-gradient(90deg, #ffb020, #ff5a1f); box-shadow: 0 0 14px rgba(255,120,40,.6); transition: width 1s var(--spring); }
+    .early-text { margin: 14px 0 0; color: #d9d0c6; max-width: 62ch; }
+    .early-text b { color: var(--white); }
+    .heat-early .mini { grid-template-columns: repeat(var(--cols, 3), 1fr); }
+    .heat-early .mini small { font-family: var(--text); font-size: 12px; color: var(--ash); font-variation-settings: normal; }
     .hint { font-size: 13px; color: var(--ash-2); margin-top: 8px; }
 
     /* Apps overview */
@@ -634,7 +642,12 @@
         <article class="panel glass" id="pHeat">
           <h2>Heat over a session</h2>
           <p class="note">Sessions lined up from their first minute. Stutter rising together with the share of hot phones means thermal throttling.</p>
-          <div class="pair">
+          <div class="heat-early" id="heatEarly" hidden>
+            <div class="early-track" aria-hidden="true"><i id="earlyFill"></i></div>
+            <p class="early-text" id="earlyText"></p>
+            <div class="mini" id="earlyStats"></div>
+          </div>
+          <div class="pair" id="heatPair">
             <div><p class="subhead">Hitch time, ms/s</p><div class="chart short" id="cMinutesHitch" role="img" aria-label="Hitch time by minute of session"></div></div>
             <div><p class="subhead">Phones running hot</p><div class="chart short" id="cMinutesHot" role="img" aria-label="Share of hot phones by minute of session"></div></div>
           </div>
@@ -1176,7 +1189,26 @@
       box.querySelectorAll(".mx-dev").forEach(b => b.addEventListener("click", () => select({ scene: null, device: b.dataset.device })));
     }
 
+    const MINUTES_FOR_TREND = 3;
     function renderMinutes(rows) {
+      // One or two minutes can't show a trend: say what is known so far and what the view will show
+      const early = rows.length < MINUTES_FOR_TREND;
+      const wasEarly = $("heatPair").hidden;
+      $("heatEarly").hidden = !early; $("heatPair").hidden = early;
+      if (early) {
+        const n = rows.length;
+        $("earlyFill").style.setProperty("--w", `${(n / MINUTES_FOR_TREND) * 100}%`);
+        $("earlyText").innerHTML = n
+          ? `Sessions so far cover <b>${n} minute${n === 1 ? "" : "s"}</b>. From ${MINUTES_FOR_TREND} minutes on, this shows minute by minute whether stutter grows as phones warm up.`
+          : `No session time yet. From ${MINUTES_FOR_TREND} minutes of use on, this shows minute by minute whether stutter grows as phones warm up.`;
+        const last = rows[n - 1];
+        $("earlyStats").style.setProperty("--cols", last ? 3 : 1);
+        $("earlyStats").innerHTML = last
+          ? `<div><span>Hitch, ${last.minute === 0 ? "first minute" : `minute ${last.minute + 1}`}</span><b>${fmt(last.hitch)}<small> ms/s</small></b></div><div><span>Running hot</span><b>${fmt((last.hot_share || 0) * 100, 0)}%</b></div><div><span>Sessions</span><b>${int(last.sessions)}</b></div>`
+          : `<div><span>Minutes recorded</span><b>0</b></div>`;
+        return;
+      }
+      if (wasEarly) requestAnimationFrame(() => { charts.cMinutesHitch?.resize(); charts.cMinutesHot?.resize(); });
       const x = rows.map(r => `${r.minute}m`);
       const tip = fn => tooltip({ trigger: "axis", axisPointer: { type: "line", lineStyle: { color: ASH2 } }, formatter: p => {
         const r = rows[p[0].dataIndex];
@@ -1185,7 +1217,7 @@
       const c1 = chart("cMinutesHitch");
       if (c1) apply(c1, Object.assign(base(), {
         tooltip: tip(r => `Hitch <b>${fmt(r.hitch)} ms/s</b>`),
-        xAxis: catAxis({ data: x, boundaryGap: false }), yAxis: valueAxis({ min: 0 }),
+        xAxis: catAxis({ data: x, boundaryGap: false }), yAxis: valueAxis({ min: 0, splitNumber: 4 }),
         series: [{ type: "line", data: rows.map(r => r.hitch), smooth: 0.45, smoothMonotone: "x", showSymbol: rows.length < 25, symbolSize: 8,
                    lineStyle: Object.assign({ width: 3, color: AMBER, cap: "round" }, glow("rgba(255,176,32,.5)", 16)),
                    itemStyle: { color: "#fff1d6", borderColor: AMBER, borderWidth: 3 },
