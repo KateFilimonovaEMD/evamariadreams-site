@@ -430,7 +430,7 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
           <h2>Cost inside the app</h2>
           <p>A monitor that slows the app down measures itself. OctiMonitor is built to stay out of the way:</p>
           <ul>
-            <li><strong>About a microsecond per frame.</strong> A test that runs on every change records 200,000 frames (draw call, presentation and GPU time, as an app does) and prints the cost: about 1.3 µs per frame on the CI simulator, 0.008% of a 16.7 ms frame. Real phones are typically faster than the CI machine; the test fails if it ever reaches 20 µs.</li>
+            <li><strong>One to two microseconds per frame.</strong> A test that runs on every change records 200,000 frames (draw call, presentation and GPU time, as an app does) and prints the cost: 1.3 to 1.7 µs per frame on the CI simulator across runs, about 0.01% of a 16.7 ms frame. Real phones are typically faster than the CI machine; the test fails if it ever reaches 20 µs.</li>
             <li><strong>No memory allocation per frame.</strong> Frame and GPU times go into fixed-size rings and histograms created up front. Recording a frame is a lock, one lookup, a few array writes and two counter increments.</li>
             <li><strong>Sorting happens rarely.</strong> Window percentiles are calculated only when a report is built (every 30 s) or the debug overlay redraws, and the sort works in place.</li>
             <li><strong>System readings once a second.</strong> Memory and heat aren't read on every frame.</li>

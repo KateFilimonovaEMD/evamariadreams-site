@@ -718,7 +718,7 @@
         <p class="note">OctiMonitor is our own monitoring SDK for Metal apps, with a Unity version on the way. No third-party analytics and no identifiers.</p>
         <div class="pipe">
           <div class="pipe-line" aria-hidden="true"></div>
-          <div class="stage" style="--i:0"><span class="stage-num" aria-hidden="true">1</span><b>Measure</b><span>Every frame the app records when it reached the screen, its CPU time and its GPU time, straight from Metal.</span><em class="tag" style="font-style:normal">≈1 µs per frame</em></div>
+          <div class="stage" style="--i:0"><span class="stage-num" aria-hidden="true">1</span><b>Measure</b><span>Every frame the app records when it reached the screen, its CPU time and its GPU time, straight from Metal.</span><em class="tag" style="font-style:normal">under 2 µs per frame</em></div>
           <div class="stage" style="--i:1"><span class="stage-num" aria-hidden="true">2</span><b>Summarize</b><span>Frames go into histograms, plus hitch time, dropped frames, memory and heat per scene.</span><em class="tag" style="font-style:normal">every 30 s</em></div>
           <div class="stage" style="--i:2"><span class="stage-num" aria-hidden="true">3</span><b>Send</b><span>One small anonymous report goes to the backend. The app's key can only add reports, within limits.</span><em class="tag" style="font-style:normal">no identifiers</em></div>
           <div class="stage" style="--i:3"><span class="stage-num" aria-hidden="true">4</span><b>Aggregate</b><span>One read-only function merges every report's histograms, so percentiles cover all frames.</span><em class="tag" style="font-style:normal">live, every 10 s</em></div>
