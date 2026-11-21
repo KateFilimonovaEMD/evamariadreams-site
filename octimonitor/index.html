@@ -216,8 +216,8 @@
       background-position: calc(100% - 18px) 52%, calc(100% - 13px) 52%; background-size: 5px 5px; background-repeat: no-repeat; }
     .select option { background: #1a1714; color: var(--white); }
     .select.glass { background-color: transparent; }
-    .seg { position: relative; display: inline-flex; padding: 4px; gap: 2px; border-radius: 999px; }
-    .seg button { position: relative; z-index: 1; border: 0; background: transparent; padding: 7px 14px; color: var(--ash); white-space: nowrap; transition: color .3s ease; }
+    .seg { position: relative; display: inline-grid; grid-auto-flow: column; grid-auto-columns: 1fr; padding: 4px; gap: 2px; border-radius: 999px; }
+    .seg button { position: relative; z-index: 1; border: 0; background: transparent; padding: 7px 14px; text-align: center; color: var(--ash); white-space: nowrap; transition: color .3s ease; }
     .seg button[aria-pressed="true"] { color: #fff; font-weight: 600; }
     .seg-thumb { position: absolute; z-index: 0; top: 4px; bottom: 4px; left: 0; width: 0; border-radius: 999px;
       background: linear-gradient(180deg, #ff6a2a, #f04a10);
@@ -503,6 +503,12 @@
       .compare-controls { width: 100%; display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; }
       .compare-controls .select { width: 100%; min-width: 0; padding-left: 12px; padding-right: 28px; text-overflow: ellipsis; }
       .panel-head .seg { margin-top: 0; }
+      /* Phones: the app picker and both segmented controls span the full width, options equal and centred */
+      .toolbar-left { width: 100%; flex-direction: column; align-items: stretch; }
+      .toolbar .select { width: 100%; text-align: center; text-align-last: center; }
+      .toolbar .seg, .panel-head .seg { display: grid; width: 100%; }
+      .seg button { padding-left: 4px; padding-right: 4px; }
+      .toolbar-view { width: 100%; text-align: center; }
       .bar { flex-wrap: nowrap; gap: 10px; }
       .bar-right { flex-wrap: nowrap; gap: 8px; }
       .mark { gap: 10px; font-size: 16px; min-width: 0; }
