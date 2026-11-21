@@ -376,7 +376,7 @@
     .budget { margin-top: 16px; }
     .budget-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--ash); }
     .budget-track { height: 8px; margin-top: 6px; border-radius: 999px; background: var(--coal-2); overflow: hidden; }
-    .budget-fill { height: 100%; border-radius: inherit; background: var(--heat); transition: width .9s var(--spring); box-shadow: 0 0 14px rgba(255,90,31,.6); }
+    .budget-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #fff1d6, #ffb020 45%, #ff5a1f 78%, #ff3d00) 0 0 / 100% 100% no-repeat; transition: width .9s var(--spring); box-shadow: 0 0 14px rgba(255,90,31,.6); }
     .rows { margin-top: 18px; display: grid; gap: 10px; }
     .rows h3 { margin: 0; font-size: 14px; font-weight: 600; color: var(--ash); }
     .rowbar { display: grid; grid-template-columns: 120px 1fr 64px; gap: 10px; align-items: center; font-size: 14px; cursor: pointer; border-radius: 8px; padding: 2px 0; }
@@ -1344,7 +1344,7 @@
 
     function budgetBar(gpu) {
       const share = (gpu || 0) / BUDGET_MS;
-      return `<div class="budget"><div class="budget-row"><span>Share of the 60 fps frame</span><span class="num" style="color:${share > 1 ? FIRE : share > 0.75 ? AMBER : WHITE}">${fmt(share * 100, 0)}%</span></div><div class="budget-track"><div class="budget-fill" style="width:${Math.min(100, share * 100)}%"></div></div></div>`;
+      return `<div class="budget"><div class="budget-row"><span>Share of the 60 fps frame</span><span class="num" style="color:${share > 1 ? FIRE : share > 0.75 ? AMBER : WHITE}">${fmt(share * 100, 0)}%</span></div><div class="budget-track"><div class="budget-fill" style="width:${Math.min(100, share * 100)}%;background-size:${share > 0 ? 100 / Math.min(1, share) : 100}% 100%"></div></div></div>`;
     }
 
     // ---------- build comparison ----------
