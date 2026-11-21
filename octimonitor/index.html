@@ -372,7 +372,7 @@
     .mini { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin-top: 16px; background: rgba(255,247,238,.06); border-radius: 16px; overflow: hidden; }
     .mini div { background: rgba(10, 8, 7, 0.55); padding: 12px 10px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; gap: 4px; }
     .mini span { display: block; font-size: 12px; color: var(--ash); }
-    .mini b { font-family: var(--display); font-size: 20px; font-variation-settings: var(--wide); font-variant-numeric: tabular-nums; }
+    .mini b { white-space: nowrap; font-family: var(--display); font-size: 20px; font-variation-settings: var(--wide); font-variant-numeric: tabular-nums; }
     .budget { margin-top: 16px; }
     .budget-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--ash); }
     .budget-track { height: 8px; margin-top: 6px; border-radius: 999px; background: var(--coal-2); overflow: hidden; }
@@ -1260,7 +1260,7 @@
         $("earlyStats").hidden = !last;
         $("earlyStats").style.setProperty("--cols", 3);
         $("earlyStats").innerHTML = last
-          ? `<div><span>${last.minute === 0 ? "First minute" : `Minute ${last.minute + 1}`}</span><b>${fmt(last.hitch)}<small> ms/s</small></b></div><div><span>Running hot</span><b>${fmt((last.hot_share || 0) * 100, 0)}%</b></div><div><span>Sessions</span><b>${int(last.sessions)}</b></div>`
+          ? `<div><span>Hitch ms/s</span><b>${fmt(last.hitch)}</b></div><div><span>Running hot</span><b>${fmt((last.hot_share || 0) * 100, 0)}%</b></div><div><span>Sessions</span><b>${int(last.sessions)}</b></div>`
           : `<div><span>Minutes recorded</span><b>0</b></div>`;
         return;
       }
