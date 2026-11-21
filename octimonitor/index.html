@@ -471,11 +471,11 @@
       background: radial-gradient(circle at 50% 35%, #2a1a12, #120c09 70%);
       box-shadow: 0 0 0 2px #0a0706, 0 0 0 3.5px rgba(255, 140, 50, calc(.45 + var(--i) * .15)), 0 8px 24px -6px rgba(255, 90, 31, .6); }
     .stage b { display: block; font-family: var(--display); font-size: 16px; line-height: 1.1; font-variation-settings: var(--wide); margin: -1px 0 10px; }
-    .stage > span:not(.stage-num) { display: block; color: var(--ash); font-size: 14px; line-height: 1.55; margin-bottom: 14px; }
+    .stage > span:not(.stage-num) { display: block; color: var(--ash); font-size: 14px; line-height: 1.55; margin-bottom: 14px; text-wrap: pretty; }
     .stage .tag { display: inline-flex; margin-top: auto; position: relative; top: 0; padding: 5px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: #ffcf99;
       background: rgba(255, 90, 31, .12); box-shadow: inset 0 0 0 1px rgba(255, 140, 60, .25); font-variant-numeric: tabular-nums; }
     @media (prefers-reduced-motion: reduce) { .pipe-line::after { display: none; } .stage .stage-num { animation: none; } }
-    .pipe-note { margin: 22px auto 0 !important; text-align: center; max-width: 62ch !important; }
+    .pipe-note { margin: 22px auto 0 !important; text-align: center; max-width: none !important; text-wrap: balance; }  /* as wide as the steps above, lines evened out */
 
     .toast { position: fixed; z-index: 40; left: 50%; bottom: 24px; transform: translate(-50%, 24px) scale(.94); opacity: 0; visibility: hidden; pointer-events: none; color: var(--white); font-weight: 600; font-size: 14px; padding: 11px 18px; border-radius: 999px;
       transition: opacity .3s ease, transform .6s var(--spring), visibility 0s linear .3s; }
