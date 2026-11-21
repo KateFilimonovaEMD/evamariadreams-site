@@ -118,13 +118,14 @@
       background: linear-gradient(90deg, #ff3d00, #ff5a1f 40%, #ffb020 80%, #fff1d6); transform-origin: left; transform: scaleX(0); display: none; }
     @supports (animation-timeline: scroll()) {
       .progress { display: block; animation: progress linear both; animation-timeline: scroll(root); }
-      @media (prefers-reduced-motion: no-preference) {
+      @media (prefers-reduced-motion: no-preference) and (hover: hover) and (pointer: fine) {
         article section, .why, .flow li, .scale div {
           animation: rise linear both; animation-timeline: view(); animation-range: entry 0% entry 45%;
         }
       }
     }
     @keyframes progress { to { transform: scaleX(1); } }
+    @media (hover: none), (pointer: coarse) { .progress { display: none !important; } }
     @keyframes rise { from { opacity: 0; transform: translateY(28px); } to { opacity: 1; transform: none; } }
 
     footer { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; padding: 32px 0 48px; color: var(--ash-2); font-size: 13px; border-top: 1px solid var(--line); }
