@@ -1419,8 +1419,8 @@
       const what = scene && device ? `${esc(scene)} on ${esc(deviceName(device))}` : scene ? esc(scene) : esc(deviceName(device));
       // Only this panel is filtered; say so, so nobody reads the page totals as this selection's
       let html = chips + `<p class="scope-note">Only this panel shows ${what}. The numbers above and the charts cover every scene and phone in view.</p>`;
-      const gpuCell = r => r && r.gpu_p95 > 0 ? approx(r, "gpu_p95") + fmt(r.gpu_p95) : "—";
-      const frameCell = r => r ? approx(r, "frame_p95") + fmt(r.frame_p95) : "—";
+      const gpuCell = r => r && r.gpu_p95 > 0 ? approx(r, "gpu_p95") + fmt(r.gpu_p95) : "–";
+      const frameCell = r => r ? approx(r, "frame_p95") + fmt(r.frame_p95) : "–";
 
       if (scene && device) {
         const c = cells.find(r => r.scene === scene && r.device === device);
