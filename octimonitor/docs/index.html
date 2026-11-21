@@ -293,7 +293,7 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
           <h3>Percentiles: p50, p95, p99</h3>
           <p>p95 is the value that 95% of frames are faster than: p50 is the typical frame, p95 the slow end people run into regularly, p99 and max are rare spikes. Two kinds are kept:</p>
           <ul>
-            <li><strong>Within a 30-second window,</strong> the phone sorts that window's frames and reads exact percentiles (nearest rank). The HUD and the latest-reports table show these.</li>
+            <li><strong>Within a 30-second window,</strong> the phone sorts that window's frames and reads exact percentiles (nearest rank). The latest-reports table shows these; the HUD in the app shows the same for its last 240 frames, about 2 to 4 seconds.</li>
             <li><strong>Over any range,</strong> percentiles come from histograms. The phone counts how many frames fell into each narrow time bucket; the server adds the counts of every report in view and reads the percentile from the total. That is the percentile of all of those frames, not an average of percentiles.</li>
           </ul>
           <div class="table-wrap"><table>
@@ -313,7 +313,7 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
 
         <section id="report">
           <h2>The report</h2>
-          <p>Every 30 seconds by default the app sends one row (Opal Caress uses 10 seconds in debug builds). If the phone is offline, the request times out or the server is busy (408, 429 or 5xx), up to 20 rows wait and go out with the next successful request; the oldest are dropped first. Any other 4xx means the server rejected the rows themselves, so they are dropped instead of blocking newer reports. When the app goes to the background, waiting rows are also saved to disk until the server confirms them, so closing the app while offline doesn't lose them. Each report says how many earlier ones were lost, and when its window ended, so late reports still land at the right time on the charts.</p>
+          <p>Every 30 seconds by default the app sends one row (Opal Caress uses 10 seconds in debug builds). If the phone is offline, the request times out or the server is busy (408, 429 or 5xx), up to 20 rows wait and go out with the next successful request; the oldest are dropped first. Any other 4xx means the server rejected the rows themselves, so they are dropped instead of blocking newer reports. When the app goes to the background, waiting rows, and a batch still on its way, are saved to disk. The file stays until the server confirms them, even across launches, so closing the app while offline doesn't lose them, and a delivered batch is never sent twice. Reports whose window ended more than a day ago are discarded rather than sent late. Each report says how many earlier ones were lost, and when its window ended, so late reports still land at the right time on the charts.</p>
 <pre><code>{
   <span class="k">"app"</span>: "com.evamariadreams.opalcaress",
   <span class="k">"kind"</span>: "perf",
@@ -325,18 +325,18 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
   <span class="k">"payload"</span>: {
     <span class="k">"schema"</span>: 2, <span class="k">"window_s"</span>: 30.02, <span class="k">"pacing"</span>: "screen",
     <span class="k">"ended_at"</span>: "2026-11-21T10:15:30.120Z",
-    <span class="k">"session_active_start_s"</span>: 120.4, <span class="k">"session_active_s"</span>: 150.3,
+    <span class="k">"session_active_start_s"</span>: 120.4, <span class="k">"session_active_s"</span>: 150.27,
     <span class="k">"thermal_now"</span>: "fair", <span class="k">"thermal_worst"</span>: "serious",
     <span class="k">"memory_mb_peak"</span>: 412.5, <span class="k">"reports_dropped"</span>: 0,
     <span class="k">"scenes"</span>: [{
       <span class="k">"scene"</span>: "Spark", <span class="k">"target_fps"</span>: 60,
-      <span class="k">"frames"</span>: 1712, <span class="k">"seconds"</span>: 29.8, <span class="k">"fps"</span>: 57.45,
-      <span class="k">"frame_ms"</span>: { "p50": 16.6, "p95": 24.1, "p99": 33.4, "max": 51.2, "n": 1712 },
-      <span class="k">"frame_hist"</span>: [[64, 210], [65, 690], [66, 610], [67, 171], [133, 22], [200, 9]],
-      <span class="k">"gpu_ms"</span>:   { "p50": 11.9, "p95": 15.5, "p99": 17.0, "max": 21.3, "n": 1712 },
-      <span class="k">"gpu_hist"</span>: [[45, 120], [47, 830], …],  <span class="k">"gpu_samples"</span>: 1712,
-      <span class="k">"dropped_frames"</span>: 31, <span class="k">"hitch_ms"</span>: 280.1, <span class="k">"hitch_ms_per_s"</span>: 9.4,
-      <span class="k">"draw_calls"</span>: 1714, <span class="k">"cpu_ms_avg"</span>: 2.1, <span class="k">"degraded_share"</span>: 0.12
+      <span class="k">"frames"</span>: 1780, <span class="k">"seconds"</span>: 29.87, <span class="k">"fps"</span>: 59.59,
+      <span class="k">"frame_ms"</span>: { "p50": 16.6, "p95": 16.9, "p99": 16.98, "max": 51.2, "n": 1780 },
+      <span class="k">"frame_hist"</span>: [[65, 140], [66, 1180], [67, 450], [133, 8], [200, 2]],
+      <span class="k">"gpu_ms"</span>:   { "p50": 11.9, "p95": 15.5, "p99": 17.0, "max": 21.3, "n": 1780 },
+      <span class="k">"gpu_hist"</span>: [[45, 120], [47, 830], …],  <span class="k">"gpu_samples"</span>: 1780,
+      <span class="k">"dropped_frames"</span>: 10, <span class="k">"hitch_ms"</span>: 202.3, <span class="k">"hitch_ms_per_s"</span>: 6.77,
+      <span class="k">"draw_calls"</span>: 1782, <span class="k">"cpu_ms_avg"</span>: 2.1, <span class="k">"degraded_share"</span>: 0.12
     }]
   }
 }</code></pre>
@@ -350,7 +350,7 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
           <ul>
             <li><strong>No identifiers.</strong> No user, device or advertising IDs. The session id is random, made at each launch and never written to disk, so two launches of the same phone can't be linked by it.</li>
             <li><strong>Device model, not device.</strong> "iPhone14,7" says which kind of phone, not whose.</li>
-            <li><strong>Insert only, within limits.</strong> The key inside the app can only add rows: row-level security blocks reading, changing or deleting. On top of that, the database accepts reports only for listed apps, only in the shape of a real report (sizes and values in plausible ranges), and at most 40 per session and 2,000 per app per minute.</li>
+            <li><strong>Insert only, within limits.</strong> The key inside the app can only add rows: row-level security blocks reading, changing or deleting. On top of that, the database accepts reports only for listed apps, only in the shape of a real report (numbers where numbers belong, in plausible ranges, and valid histograms), and at most 40 per session and 2,000 per app per minute; over that the server answers 429 and the app simply tries again later.</li>
             <li><strong>What this page can read.</strong> Only the output of one database function: totals, merged histograms, and anonymous summaries of the 12 latest 30-second windows (time, phone model, app version, scene and its timings, without the session id). With very few phones in a range, such a summary can still describe a single phone's window.</li>
             <li><strong>HTTPS only, off by default.</strong> Without an <code>https://</code> endpoint in the app's settings, reporting is off and the package never touches the network. The package ships its own privacy manifest.</li>
           </ul>
@@ -445,7 +445,7 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
           <p>Every change to OctiMonitor runs two test jobs on GitHub:</p>
           <ul>
             <li><strong>The Swift package</strong> is built and tested on the iOS Simulator: percentiles, histogram buckets and merging, frame pacing from presentation times, missing GPU timing, the retry policy and the cost per frame.</li>
-            <li><strong>The database code</strong> runs against a real Postgres. A script simulates phones frame by frame, writes the reports the app would send, and checks the dashboard function's percentiles, fps, hitch time and heat shares against values computed directly from every frame. A second script, run as the public role, checks that unlisted apps, malformed reports, floods and reading the raw table are all refused, and that upgrading from the first version works.</li>
+            <li><strong>The database code</strong> runs against a real Postgres. A script simulates phones frame by frame, writes the reports the app would send, and checks the dashboard function's percentiles, fps, hitch time and heat shares against values computed directly from every frame. A second script, run as the public role, checks that unlisted apps, malformed reports, floods and reading the raw table are all refused, that floods get the 429 answer the app retries on, that malformed rows stored earlier can't break the dashboard, and that upgrading from the first version works and keeps the apps already reporting.</li>
           </ul>
         </section>
 
