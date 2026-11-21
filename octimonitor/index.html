@@ -276,6 +276,7 @@
     .early-text b { color: var(--white); }
     .heat-early .mini { grid-template-columns: repeat(var(--cols, 3), 1fr); }
     .heat-early .mini small { font-family: var(--text); font-size: 12px; color: var(--ash); font-variation-settings: normal; }
+    .chart-note { margin: 18px 0 6px; padding: 18px 20px; border-radius: 16px; background: rgba(255,247,238,.035); box-shadow: inset 0 0 0 1px rgba(255,247,238,.06); color: var(--ash); font-size: 15px; }
     .hint { font-size: 13px; color: var(--ash-2); margin-top: 8px; }
 
     /* Apps overview */
@@ -415,7 +416,7 @@
     .notice.err { border-color: rgba(255, 61, 0, 0.6); }
 
     /* Data pipeline: four steps joined by a line that a spark of data travels along */
-    .pipe { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 24px; padding-top: 44px; }
+    .pipe { position: relative; display: grid; grid-template-columns: repeat(4, 1fr); grid-auto-rows: 1fr; gap: 16px; margin-top: 24px; padding-top: 44px; }
     /* The line runs through the circle centres, in the free space above the cards */
     .pipe-line { position: absolute; left: 12.5%; right: 12.5%; top: 25px; height: 2px; border-radius: 2px;
       background: linear-gradient(90deg, rgba(255,61,0,.15), rgba(255,140,40,.55), rgba(255,241,214,.35)); }
@@ -433,18 +434,20 @@
       6% { box-shadow: 0 0 0 2px #0a0706, 0 0 0 3.5px rgba(255, 210, 160, 1), 0 0 26px 2px rgba(255, 150, 60, .75); }
       26% { box-shadow: 0 0 0 2px #0a0706, 0 0 0 3.5px rgba(255, 140, 50, calc(.45 + var(--i) * .15)), 0 8px 24px -6px rgba(255, 90, 31, .6); }
     }
-    .stage { position: relative; padding: 24px 20px 20px; border-radius: 22px; text-align: center;
+    .stage { position: relative; display: flex; flex-direction: column; align-items: center; padding: 20px; border-radius: 22px; text-align: center;
       background: linear-gradient(180deg, rgba(255,247,238,.06), rgba(255,247,238,.02));
       box-shadow: inset 0 0 0 1px rgba(255,247,238,.08), inset 0 1px 0 rgba(255,247,238,.08), 0 18px 40px -24px rgba(0,0,0,.8);
       transition: transform .5s var(--spring), box-shadow .3s ease; }
     @media (hover: hover) { .stage:hover { transform: translateY(-3px); box-shadow: inset 0 0 0 1px rgba(255,160,90,.28), inset 0 1px 0 rgba(255,247,238,.12), 0 24px 50px -24px rgba(255,90,31,.35); } }
+    /* Touch screens: the same glow lights up on a tap and fades out (a tap, not a scroll, triggers it) */
+    .stage.pressed { box-shadow: inset 0 0 0 1px rgba(255,160,90,.34), inset 0 1px 0 rgba(255,247,238,.14), 0 24px 50px -20px rgba(255,90,31,.5); transition: box-shadow .15s ease; }
     .stage .stage-num { position: absolute; top: -45px; left: 50%; margin-left: -26px; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center; line-height: 1;
       font-family: var(--display); font-weight: 800; font-size: 18px; font-variation-settings: var(--wide); color: #fff7ee;
       background: radial-gradient(circle at 50% 35%, #2a1a12, #120c09 70%);
       box-shadow: 0 0 0 2px #0a0706, 0 0 0 3.5px rgba(255, 140, 50, calc(.45 + var(--i) * .15)), 0 8px 24px -6px rgba(255, 90, 31, .6); }
-    .stage b { display: block; font-family: var(--display); font-size: 16px; font-variation-settings: var(--wide); margin-bottom: 8px; }
-    .stage > span:not(.stage-num) { display: block; color: var(--ash); font-size: 14px; line-height: 1.55; }
-    .stage .tag { display: inline-flex; margin-top: 14px; padding: 5px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: #ffcf99;
+    .stage b { display: block; font-family: var(--display); font-size: 16px; line-height: 1.1; font-variation-settings: var(--wide); margin: -1px 0 10px; }
+    .stage > span:not(.stage-num) { display: block; color: var(--ash); font-size: 14px; line-height: 1.55; margin-bottom: 14px; }
+    .stage .tag { display: inline-flex; margin-top: auto; position: relative; top: 0; padding: 5px 10px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: #ffcf99;
       background: rgba(255, 90, 31, .12); box-shadow: inset 0 0 0 1px rgba(255, 140, 60, .25); font-variant-numeric: tabular-nums; }
     @media (prefers-reduced-motion: reduce) { .pipe-line::after { display: none; } .stage .stage-num { animation: none; } }
     .pipe-note { margin: 22px auto 0 !important; text-align: center; max-width: 62ch !important; }
@@ -479,6 +482,7 @@
       .pipe-line::after { left: 0; top: -13%; width: 2px; height: 26%; background: linear-gradient(180deg, rgba(255,226,190,0.000) 0%, rgba(255,226,190,0.091) 10%, rgba(255,226,190,0.328) 20%, rgba(255,226,190,0.622) 30%, rgba(255,226,190,0.859) 40%, rgba(255,226,190,0.950) 50%, rgba(255,226,190,0.859) 60%, rgba(255,226,190,0.622) 70%, rgba(255,226,190,0.328) 80%, rgba(255,226,190,0.091) 90%, rgba(255,226,190,0.000) 100%); animation-name: wavev; }
       @keyframes wavev { 0% { transform: translateY(0); opacity: 0; } 6% { opacity: 1; } 94% { opacity: 1; } 100% { transform: translateY(calc(100% * 100 / 26)); opacity: 0; } }
       .stage { padding: 18px; text-align: center; }
+      .pipe { grid-auto-rows: 1fr; }
       /* Circles sit fully left of the cards, centred on each card and on the line */
       .stage .stage-num { top: 50%; margin-top: -22px; left: -58px; margin-left: 0; width: 44px; height: 44px; font-size: 16px; }
       .inspector { position: static; }
@@ -610,7 +614,7 @@
             </div>
           </div>
           <div class="chart" id="cTimeline" role="img" aria-label="Line chart of the selected metric over time"></div>
-          <div class="hint">Scroll or pinch on the chart to zoom, drag to pan.</div>
+          <div class="hint" id="zoomHint">Scroll or pinch on the chart to zoom, drag to pan.</div>
         </article>
       </section>
 
@@ -949,7 +953,12 @@
       $("cScenes").hidden = !hasGpu;
       document.querySelector("#pHeatmap .matrix-wrap").hidden = !hasGpu;
       document.querySelector("#pHeatmap .mx-legend").hidden = !hasGpu;
-      document.querySelectorAll("[data-nogpu]").forEach(el => el.hidden = hasGpu);
+      const noScenes = !(d.scenes || []).length;
+      document.querySelectorAll("[data-nogpu]").forEach((el, i) => {
+        el.hidden = hasGpu;
+        el.textContent = noScenes ? (i ? "No scenes in this range yet." : "No scene data in this range yet.")
+          : (i ? "No GPU time in this view, so there is nothing to compare across phones yet." : "No GPU time in this view. The app sends frame timing only; GPU time needs a Metal command buffer to read it from.");
+      });
       renderScenes();
       if (hasGpu && gpuWasHidden && charts.cScenes) requestAnimationFrame(() => charts.cScenes.resize());
       renderHeat();
@@ -1051,6 +1060,15 @@
     function renderTimeline() {
       const c = chart("cTimeline"); if (!c) return;
       const rows = state.data.timeline || [];
+      const hasTiming = rows.some(r => [r.fps, r.hitch, r.frame_p95].some(v => v != null));
+      $("zoomHint").hidden = rows.length < 3;   // nothing to zoom into with one or two points
+      $("zoomHint").textContent = rows.length > Math.max(24, Math.round(($("cTimeline").clientWidth || 600) / 9))
+        ? "Showing the most recent stretch. Scroll or pinch on the chart to zoom out, drag to see earlier."
+        : "Scroll or pinch on the chart to zoom, drag to pan.";
+      if (chartNote("cTimeline", hasTiming ? null : "No frame timing in this range yet. Pick a longer range, or open the app to send a report.")) {
+        $("timelineNote").textContent = METRICS[state.metric].note;
+        return;
+      }
       const m = METRICS[state.metric];
       const x = rows.map(r => timeLabel(r.t));
       // A line needs two windows. With one, show the point with its value and say why there's no line yet.
@@ -1071,7 +1089,12 @@
         : m.ref.map((r, i) => ({ yAxis: r.y, label: { formatter: r.label, position: m.ref.length > 1 && i === 0 ? "insideEndBottom" : "insideEndTop" } }));
       const viewKey = `${state.app}|${state.hours}`;
       const prev = c.__view === viewKey && c.getOption && c.getOption();
-      const zoom = prev && prev.dataZoom && prev.dataZoom[0] ? { start: prev.dataZoom[0].start, end: prev.dataZoom[0].end } : { start: 0, end: 100 };
+      // Long ranges (30 days of hourly points) open on the most recent stretch, sized to the screen,
+      // instead of squeezing hundreds of points into a scribble. Scroll or pinch shows the rest.
+      const fit = Math.max(24, Math.round(($("cTimeline").clientWidth || 600) / 9));
+      const initial = rows.length > fit ? { start: 100 - (fit / rows.length) * 100, end: 100 } : { start: 0, end: 100 };
+      const zoom = prev && prev.dataZoom && prev.dataZoom[0] ? { start: prev.dataZoom[0].start, end: prev.dataZoom[0].end } : initial;
+      const dense = rows.length > 60;
       const rebuild = state.metricChanged || c.__view !== viewKey;
       c.__view = viewKey;
       apply(c, Object.assign(base(), {
@@ -1085,7 +1108,8 @@
         // Headroom above the highest point so the line's glow never touches the top edge
         yAxis: valueAxis({ min: 0, max: top, interval: step, axisLabel: { color: ASH2, formatter: `{value} ${m.unit}` } }),
         series: [{
-          type: "line", data: rows.map(r => r[state.metric]), smooth: 0.45, smoothMonotone: "x", showSymbol: rows.length < 30, symbolSize: single ? 14 : 9,
+          type: "line", data: rows.map(r => r[state.metric]), smooth: dense ? 0.2 : 0.45, smoothMonotone: "x", showSymbol: rows.length < 30, symbolSize: single ? 14 : 9,
+          sampling: "lttb",
           label: { show: single, position: "top", distance: 12, color: WHITE, fontWeight: 600, fontSize: 13, formatter: p => `${fmt(p.value, m.digits)} ${m.unit}` },
           lineStyle: Object.assign({ width: 3, color: grad([0, 0, 1, 0], [[0, AMBER], [1, EMBER]]), cap: "round", join: "round" }, glow("rgba(255,90,31,.55)", 18)),
           itemStyle: { color: "#fff1d6", borderColor: EMBER, borderWidth: 3 },
@@ -1131,6 +1155,7 @@
       });
 
       const sorted = scenes.slice().sort((a, b) => (b.gpu_p95 || 0) - (a.gpu_p95 || 0));
+      $("scenesTable").closest("details").hidden = !scenes.length;
       $("scenesTable").innerHTML =
         `<thead><tr><th>Scene</th><th class="r">FPS</th><th class="r">Frame p95</th><th class="r">GPU p50</th><th class="r">GPU p95</th><th class="r">Hitch</th><th class="r">Dropped</th></tr></thead><tbody>` +
         sorted.map(r => `<tr class="pick${pick === r.scene ? " selected" : ""}" data-scene="${esc(r.scene)}" tabindex="0"><td>${esc(r.scene)}</td><td class="r">${fmt(r.fps)}</td><td class="r">${fmt(r.frame_p95)} ms</td><td class="r">${fmt(r.gpu_p50)} ms</td><td class="r">${fmt(r.gpu_p95)} ms</td><td class="r">${fmt(r.hitch)} ms/s</td><td class="r">${int(r.dropped)}</td></tr>`).join("") +
@@ -1189,6 +1214,16 @@
       box.querySelectorAll(".mx-dev").forEach(b => b.addEventListener("click", () => select({ scene: null, device: b.dataset.device })));
     }
 
+    // When a chart has nothing meaningful to draw, show one plain sentence in its place instead of empty axes
+    function chartNote(id, msg) {
+      const el = $(id); if (!el) return false;
+      let note = el.nextElementSibling;
+      if (!note || !note.classList.contains("chart-note")) { note = document.createElement("p"); note.className = "chart-note"; el.after(note); }
+      const wasHidden = el.hidden;
+      el.hidden = !!msg; note.hidden = !msg; note.textContent = msg || "";
+      if (!msg && wasHidden && charts[id]) requestAnimationFrame(() => charts[id].resize());
+      return !!msg;
+    }
     const MINUTES_FOR_TREND = 3;
     function renderMinutes(rows) {
       // One or two minutes can't show a trend: say what is known so far and what the view will show
@@ -1202,7 +1237,8 @@
           ? `Sessions so far cover <b>${n} minute${n === 1 ? "" : "s"}</b>. From ${MINUTES_FOR_TREND} minutes on, this shows minute by minute whether stutter grows as phones warm up.`
           : `No session time yet. From ${MINUTES_FOR_TREND} minutes of use on, this shows minute by minute whether stutter grows as phones warm up.`;
         const last = rows[n - 1];
-        $("earlyStats").style.setProperty("--cols", last ? 3 : 1);
+        $("earlyStats").hidden = !last;
+        $("earlyStats").style.setProperty("--cols", 3);
         $("earlyStats").innerHTML = last
           ? `<div><span>Hitch, ${last.minute === 0 ? "first minute" : `minute ${last.minute + 1}`}</span><b>${fmt(last.hitch)}<small> ms/s</small></b></div><div><span>Running hot</span><b>${fmt((last.hot_share || 0) * 100, 0)}%</b></div><div><span>Sessions</span><b>${int(last.sessions)}</b></div>`
           : `<div><span>Minutes recorded</span><b>0</b></div>`;
@@ -1223,8 +1259,9 @@
                    itemStyle: { color: "#fff1d6", borderColor: AMBER, borderWidth: 3 },
                    areaStyle: { color: fade("255,176,32", 0.32) } }]
       }));
+      const anyHot = rows.some(r => (r.hot_share || 0) > 0);
       const c2 = chart("cMinutesHot");
-      if (c2) apply(c2, Object.assign(base(), {
+      if (!chartNote("cMinutesHot", anyHot ? null : "No phone ran hot in these sessions: heat stayed nominal or fair the whole time.") && c2) apply(c2, Object.assign(base(), {
         tooltip: tip(r => `Running hot <b>${fmt((r.hot_share || 0) * 100, 0)}%</b>`),
         xAxis: catAxis({ data: x }), yAxis: valueAxis({ min: 0, max: 100, axisLabel: { color: ASH2, formatter: "{value}%" } }),
         series: [{ type: "bar", data: rows.map(r => Math.round((r.hot_share || 0) * 100)), barMaxWidth: 14, animationDelay: i => i * 40,
@@ -1324,6 +1361,8 @@
 
     function renderCompare() {
       const vs = sortVersions(state.data.versions || []);
+      document.querySelector("#pCompare .compare-controls").hidden = vs.length < 2;
+      $("versionsTable").closest("details").hidden = !vs.length;
       const oneApp = new Set(vs.map(v => v.app)).size <= 1;
       const opts = vs.map(v => `<option value="${esc(vkey(v))}">${oneApp ? "" : esc(appName(v.app)) + " "}${esc(v.version)}</option>`).join("");
       const b = $("baseline"), c = $("candidate");
@@ -1335,7 +1374,7 @@
 
       const A = vs.find(v => vkey(v) === state.compare.base), B = vs.find(v => vkey(v) === state.compare.cand);
       if (!A || !B || vs.length < 2) {
-        $("compareTable").innerHTML = `<tbody><tr><td class="muted" style="white-space:normal">Only one build has reported so far. Ship the next build and the comparison fills in automatically.</td></tr></tbody>`;
+        $("compareTable").innerHTML = `<tbody><tr><td class="muted" style="white-space:normal">${vs.length ? "Only one build has reported in this range. Ship the next build and the comparison fills in automatically." : "No build has reported in this range yet."}</td></tr></tbody>`;
       } else {
         const rows = [["Frame rate", "fps", 1, true], ["Frame time p95", "frame_p95", 1, false], ["GPU time p95", "gpu_p95", 1, false], ["Hitch time", "hitch", 1, false], ["Sessions", "sessions", 0, null]];
         const units = { fps: "fps", frame_p95: "ms", gpu_p95: "ms", hitch: "ms/s", sessions: "" };
@@ -1364,6 +1403,7 @@
       const key = r => `${r.at}|${r.device}|${r.scene}`;
       $("recentTable").innerHTML =
         `<thead><tr><th>When</th><th>Device</th><th>Scene</th><th class="r hide-sm">FPS</th><th class="r hide-sm">Frame p95</th><th class="r">GPU p95</th><th class="hide-sm">Heat</th><th class="hide-sm">Build</th></tr></thead><tbody>` +
+        (rows.length ? "" : `<tr><td colspan="7" class="muted" style="white-space:normal">No reports in this range yet.</td></tr>`) +
         rows.slice(0, 12).map(r => { const th = THERMAL[r.thermal] || ["Unknown", ASH2];
           const fresh = !state.firstLoad && !state.seenRecent.has(key(r));
           return `<tr class="pick${fresh ? " fresh" : ""}" data-scene="${esc(r.scene)}" data-device="${esc(r.device)}" tabindex="0"><td class="muted">${ago(r.at)}</td><td>${esc(deviceName(r.device))}</td><td>${esc(r.scene)}</td><td class="r hide-sm">${fmt(r.fps)}</td><td class="r hide-sm">${fmt(r.frame_p95)} ms</td><td class="r">${fmt(r.gpu_p95)} ms</td><td class="hide-sm">${heatTag(th[0], th[1])}</td><td class="muted hide-sm">${esc(r.version)}</td></tr>`; }).join("") +
@@ -1449,6 +1489,11 @@
       });
     }
     addEventListener("resize", phasePipeline);
+    if (!matchMedia("(hover: hover)").matches) {
+      document.querySelectorAll(".stage").forEach(st => st.addEventListener("click", () => {
+        st.classList.add("pressed"); clearTimeout(st._t); st._t = setTimeout(() => st.classList.remove("pressed"), 1100);
+      }));
+    }
     let wasCompact = innerWidth < 600;
     addEventListener("resize", () => { const c = innerWidth < 600; if (c !== wasCompact && state.data) { wasCompact = c; renderHeat(); } });
     (document.fonts ? document.fonts.ready : Promise.resolve()).then(phasePipeline);
