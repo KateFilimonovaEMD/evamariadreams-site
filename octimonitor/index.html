@@ -124,6 +124,10 @@
     @keyframes progress { to { transform: scaleX(1); } }
 
     /* Command menu button */
+    .report-mobile { display: none; width: 100%; border: 0; border-radius: 999px; padding: 12px 16px; font: inherit; font-size: 15px; font-weight: 600; color: #fff;
+      background: linear-gradient(180deg, #ff7a3c, #ff4e12); box-shadow: inset 0 1px 0 rgba(255,255,255,.25), 0 10px 26px -10px rgba(255,90,31,.8); cursor: pointer; transition: transform .35s var(--spring), opacity .2s ease; }
+    .report-mobile:active { transform: scale(.97); }
+    .report-mobile:disabled { opacity: .4; }
     .cmd-btn { display: inline-flex; align-items: center; gap: 10px; color: var(--ash); border: 0; cursor: pointer; font: inherit; font-size: 14px;
       border-radius: 999px; padding: 8px 10px 8px 14px; transition: transform .35s var(--spring), color .2s ease; }
     .cmd-btn:hover { color: var(--white); }
@@ -516,6 +520,7 @@
       @media (min-width: 360px) { #liveText { min-width: 5.6em; } }
       .live { padding: 8px 14px 8px 12px; }
       .bar .ghost { display: none; }
+      .report-mobile { display: block; }
       .cmd-label, .cmd-kbd { display: none; }
       .cmd-btn { padding: 10px; color: var(--white); }
       #updated { display: none; }
@@ -538,7 +543,7 @@
         <button class="cmd-btn glass" id="cmdOpen" type="button" aria-label="Search and commands" aria-keyshortcuts="Meta+K Control+K /"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg><span class="cmd-label">Search</span><kbd class="cmd-kbd">⌘K</kbd></button>
         <a class="ghost glass" href="docs/">How it works</a>
         <button class="ghost glass" id="share" type="button">Copy link to this view</button>
-        <button class="ghost glass" id="export" type="button" disabled>Export CSV</button>
+        <button class="ghost glass" id="export" type="button" disabled>Download report</button>
         <span class="live glass" id="live"><span class="dot" aria-hidden="true"></span><b id="liveText">Connecting</b><span id="updated" aria-live="polite"></span></span>
       </div>
       <span class="progress" aria-hidden="true"></span>
@@ -572,6 +577,7 @@
           </div>
               </div>
       <span class="toolbar-view" id="viewLabel" aria-live="polite"></span>
+      <button class="report-mobile glass" id="exportMobile" type="button" disabled>Download report</button>
     </div>
 
     <div class="notice glass err" id="error" hidden><b>The data service isn't responding.</b> <span id="errorText"></span> The page retries every 10 seconds.</div>
@@ -937,7 +943,7 @@
       const wasHidden = $("content").hidden;
       $("empty").hidden = has;
       $("content").hidden = !has;
-      $("export").disabled = !has;
+      $("export").disabled = $("exportMobile").disabled = !has;
       renderGauge(has ? o.hitch : null);
       renderViewLabel();
       if (!has) return;
@@ -1448,6 +1454,199 @@
       toast("CSV downloaded");
     }
 
+    // ---------- report ----------
+    // A finished, self-contained page: the same numbers as the dashboard, laid out to read, forward or print.
+    function buildReport() {
+      const d = state.data; if (!d) return null;
+      const t = d.totals || {}, o = d.overall || {};
+      const range = { 1: "Last hour", 24: "Last 24 hours", 168: "Last 7 days", 720: "Last 30 days" }[state.hours];
+      const scope = state.app ? appName(state.app) : ((d.apps || []).length > 1 ? "All apps" : appName((d.apps || [])[0] || "app"));
+      const now = new Date();
+      const stamp = now.toLocaleString("en-GB", { day: "numeric", month: "long", year: "numeric", hour: "2-digit", minute: "2-digit" });
+      const [vWord] = verdict(o.hitch);
+      const vClass = o.hitch < 5 ? "good" : o.hitch <= 10 ? "warn" : "bad";
+      const pin = Math.min(100, Math.max(0, (o.hitch || 0) / 20 * 100));
+      const minutes = (o.seconds || 0) / 60;
+      const useTime = minutes >= 90 ? `${fmt(minutes / 60, 1)} h` : `${Math.max(1, Math.round(minutes))} min`;
+      const checks = runChecks(d);
+      const img = id => {
+        const el = $(id), c = charts[id];
+        if (!c || !el || el.hidden || el.closest("[hidden]") || !el.clientWidth) return "";
+        return c.getDataURL({ type: "png", pixelRatio: 2, backgroundColor: "#15110e" });
+      };
+      const fig = (id, title, note) => { const src = img(id); return src ? `<figure><figcaption><b>${esc(title)}</b>${note ? `<span>${esc(note)}</span>` : ""}</figcaption><img src="${src}" alt="${esc(title)}"></figure>` : ""; };
+      const m = METRICS[state.metric];
+      const share = v => v > 0 ? `${fmt(v / BUDGET_MS * 100, 0)}%` : "–";
+      const scenes = (d.scenes || []).slice().sort((a, b) => (b.gpu_p95 || 0) - (a.gpu_p95 || 0));
+      const cells = (d.device_scene || []).slice().sort((a, b) => (b.gpu_p95 || 0) - (a.gpu_p95 || 0)).slice(0, 12);
+      const vs = sortVersions(d.versions || []).slice().reverse();
+      const thermalTotal = Object.values(d.thermal || {}).reduce((s, n) => s + (n || 0), 0);
+      const heatRows = Object.entries(THERMAL).map(([k, [label]]) => ({ label, n: (d.thermal || {})[k] || 0 })).filter(r => r.n);
+      const tone = v => v > BUDGET_MS ? "bad" : v > BUDGET_MS * 0.75 ? "warn" : "";
+      const hTone = h => h > 10 ? "bad" : h >= 5 ? "warn" : "";
+
+      const css = `
+        :root { --paper: #fbf8f4; --ink: #1c1511; --muted: #7a6e65; --line: #e9e1d8; --ember: #f04e14; --amber: #c98400; --good: #2f9e6e; }
+        * { box-sizing: border-box; }
+        html { background: #ece6df; }
+        body { margin: 0; font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Archivo", system-ui, sans-serif; color: var(--ink); -webkit-font-smoothing: antialiased; }
+        .sheet { max-width: 920px; margin: 24px auto; background: var(--paper); border-radius: 22px; overflow: hidden; box-shadow: 0 30px 80px -40px rgba(60, 30, 10, .45); }
+        header { position: relative; padding: 34px 44px 30px; color: #fff7ee; background: radial-gradient(120% 140% at 85% -20%, #ff5a1f 0%, #7a2a0c 34%, #1a110c 70%); }
+        .brand { display: flex; align-items: center; gap: 12px; font-family: "Archivo", sans-serif; font-weight: 700; font-size: 16px; font-stretch: 125%; }
+        .glyph { width: 26px; height: 26px; border-radius: 8px; background: linear-gradient(90deg, #ff3d00, #ff5a1f 35%, #ffb020 75%, #fff1d6); position: relative; }
+        .glyph::after { content: ""; position: absolute; inset: 7px; border-radius: 3px; background: #1a110c; }
+        h1 { font-family: "Archivo", sans-serif; font-stretch: 125%; font-weight: 800; font-size: 38px; line-height: 1.05; letter-spacing: -.03em; margin: 26px 0 8px; }
+        .meta { color: rgba(255, 247, 238, .72); font-size: 14px; }
+        .meta b { color: #fff7ee; font-weight: 600; }
+        .print { position: absolute; top: 28px; right: 32px; font: 600 13px/1 inherit; color: #1a110c; background: #fff7ee; border: 0; border-radius: 999px; padding: 10px 16px; cursor: pointer; }
+        main { padding: 32px 44px 40px; }
+        section { margin-top: 34px; break-inside: avoid; }
+        section:first-child { margin-top: 0; }
+        h2 { font-family: "Archivo", sans-serif; font-stretch: 112%; font-size: 19px; letter-spacing: -.01em; margin: 0 0 12px; }
+        .lead { display: grid; grid-template-columns: 1.1fr 1fr; gap: 18px; }
+        .verdict { border-radius: 18px; padding: 22px 24px; background: #1a110c; color: #fff7ee; }
+        .verdict small { color: rgba(255, 247, 238, .66); font-size: 13px; }
+        .big { font-family: "Archivo", sans-serif; font-stretch: 125%; font-weight: 800; font-size: 54px; line-height: 1; letter-spacing: -.03em; margin: 10px 0 2px; }
+        .big span { font: 600 15px/1 -apple-system, sans-serif; color: rgba(255, 247, 238, .6); margin-left: 8px; letter-spacing: 0; }
+        .track { position: relative; height: 6px; border-radius: 6px; margin: 18px 0 8px; background: linear-gradient(90deg, #fff1d6, #ffb020 45%, #ff5a1f 78%, #ff3d00); }
+        .track i { position: absolute; top: 50%; width: 16px; height: 16px; margin: -8px 0 0 -8px; border-radius: 50%; background: #fff7ee; box-shadow: 0 0 0 4px #1a110c, 0 0 14px rgba(255, 140, 50, .9); }
+        .scale { position: relative; height: 1.4em; font-size: 12px; color: rgba(255, 247, 238, .5); white-space: nowrap; }
+        .scale span { position: absolute; left: var(--x); transform: translateX(-50%); }
+        .scale span:first-child { left: 0; transform: none; } .scale span:last-child { left: auto; right: 0; transform: none; }
+        .pill { display: inline-flex; align-items: center; gap: 8px; margin-top: 14px; font-weight: 600; }
+        .pill::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+        .good { color: var(--good); } .warn { color: var(--amber); } .bad { color: var(--ember); }
+        .verdict .good { color: #7ee2b0; } .verdict .warn { color: #ffb020; } .verdict .bad { color: #ff7a45; }
+        .kpis { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border-radius: 18px; overflow: hidden; border: 1px solid var(--line); }
+        .kpis div { background: #fff; padding: 14px 16px; }
+        .kpis span { display: block; font-size: 12px; color: var(--muted); }
+        .kpis b { font-family: "Archivo", sans-serif; font-stretch: 112%; font-size: 22px; font-variant-numeric: tabular-nums; }
+        .kpis b small { font: 500 12px/1 -apple-system, sans-serif; color: var(--muted); margin-left: 3px; }
+        .checks { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+        .checks li { display: grid; grid-template-columns: 92px 1fr; gap: 12px; padding: 12px 14px; border-radius: 14px; background: #fff; border: 1px solid var(--line); break-inside: avoid; }
+        .checks li.critical { background: #fff3ee; border-color: #ffd2bf; }
+        .checks li.warning { background: #fff9ec; border-color: #f6e2b5; }
+        .checks em { font-style: normal; font-weight: 700; font-size: 13px; }
+        .checks b { display: block; } .checks span { color: var(--muted); font-size: 14px; }
+        figure { margin: 0 0 16px; border-radius: 18px; overflow: hidden; background: #15110e; break-inside: avoid; }
+        figcaption { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; padding: 14px 18px 0; color: #fff7ee; }
+        figcaption span { color: #9a928a; font-size: 13px; }
+        figure img { display: block; width: 100%; height: auto; padding: 6px 8px 10px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; font-variant-numeric: tabular-nums; background: #fff; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; }
+        th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); }
+        th { font-size: 12px; font-weight: 600; color: var(--muted); background: #f6f1eb; }
+        td.r, th.r { text-align: right; }
+        tr:last-child td { border-bottom: 0; }
+        .bar { display: inline-block; vertical-align: middle; width: 70px; height: 6px; border-radius: 6px; background: #efe7de; margin-right: 8px; overflow: hidden; }
+        .bar i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #ffb020, #ff5a1f); }
+        .heat { display: flex; height: 12px; border-radius: 12px; overflow: hidden; margin-bottom: 8px; }
+        .legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+        .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+        .notes { font-size: 13px; color: var(--muted); }
+        .notes p { margin: 0 0 6px; }
+        footer { padding: 18px 44px 28px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+        a { color: var(--ember); }
+        @media (max-width: 640px) {
+          .sheet { margin: 0; border-radius: 0; }
+          header, main { padding-left: 20px; padding-right: 20px; } footer { padding-left: 20px; padding-right: 20px; }
+          h1 { font-size: 30px; margin-top: 54px; } .print { top: 22px; right: 18px; }
+          .lead { grid-template-columns: 1fr; }
+          .checks li { grid-template-columns: 1fr; gap: 2px; }
+          .wide { overflow-x: auto; }
+        }
+        @page { size: A4; margin: 12mm; }
+        @media print {
+          html { background: #fff; } .sheet { margin: 0; box-shadow: none; border-radius: 0; max-width: none; }
+          .print { display: none; }
+          * { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+        }`;
+
+      const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OctiMonitor report · ${esc(scope)} · ${esc(range)}</title>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&amp;display=swap" rel="stylesheet">
+<style>${css}</style></head><body><div class="sheet">
+<header>
+  <div class="brand"><span class="glyph"></span>OctiMonitor</div>
+  <button class="print" onclick="print()">Save as PDF</button>
+  <h1>Performance report</h1>
+  <div class="meta"><b>${esc(scope)}</b> · ${esc(range)} · generated ${esc(stamp)}</div>
+</header>
+<main>
+  <section class="lead">
+    <div class="verdict">
+      <small>Hitch time, the stutter people feel</small>
+      <div class="big">${fmt(o.hitch, o.hitch >= 100 ? 0 : 1)}<span>ms per second</span></div>
+      <div class="track"><i style="left:${pin}%"></i></div>
+      <div class="scale"><span>0 smooth</span><span style="--x:25%">5</span><span style="--x:50%">10</span><span>20+ stutter</span></div>
+      <div class="pill ${vClass}">${esc(vWord)}</div>
+    </div>
+    <div class="kpis">
+      <div><span>Sessions</span><b>${int(t.sessions)}</b></div>
+      <div><span>Devices</span><b>${int(t.devices)}</b></div>
+      <div><span>Frames measured</span><b>${int(o.frames)}</b></div>
+      <div><span>Time in use</span><b>${esc(useTime)}</b></div>
+      <div><span>Average frame rate</span><b>${fmt(o.fps)}<small>fps</small></b></div>
+      <div><span>Frame time p95</span><b>${fmt(o.frame_p95)}<small>ms</small></b></div>
+      <div><span>GPU time p95</span><b>${o.gpu_p95 > 0 ? fmt(o.gpu_p95) : "–"}<small>${o.gpu_p95 > 0 ? "ms" : ""}</small></b></div>
+      <div><span>Dropped frames</span><b>${int(o.dropped)}</b></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Health checks</h2>
+    <ul class="checks">${checks.length ? checks.map(c => `<li class="${c.sev}"><em class="${c.sev === "critical" ? "bad" : "warn"}">${c.sev === "critical" ? "Critical" : "Warning"}</em><div><b>${esc(c.title)}</b><span>${esc(c.detail)}</span></div></li>`).join("")
+      : `<li><em class="good">Passing</em><div><b>Within budget</b><span>Every scene fits the GPU budget, hitches are under 5 ms/s and no regression against the previous build.</span></div></li>`}</ul>
+  </section>
+
+  <section>
+    <h2>Charts</h2>
+    ${fig("cTimeline", `${m.label} over time`, "")}
+    ${fig("cScenes", "GPU time per scene, p95", "Dashed line: the 16.7 ms frame at 60 fps")}
+    ${fig("cMinutesHitch", "Hitch time by minute of a session", "")}
+    ${fig("cMinutesHot", "Phones running hot by minute of a session", "")}
+  </section>
+
+  ${scenes.length ? `<section><h2>Scenes</h2><div class="wide"><table>
+    <thead><tr><th>Scene</th><th class="r">FPS</th><th class="r">Frame p95</th><th class="r">GPU p95</th><th>Share of frame</th><th class="r">Hitch</th><th class="r">Dropped</th></tr></thead><tbody>
+    ${scenes.map(s => `<tr><td><b>${esc(s.scene)}</b></td><td class="r">${fmt(s.fps)}</td><td class="r">${fmt(s.frame_p95)} ms</td><td class="r ${tone(s.gpu_p95)}">${s.gpu_p95 > 0 ? fmt(s.gpu_p95) + " ms" : "–"}</td><td><span class="bar"><i style="width:${Math.min(100, (s.gpu_p95 || 0) / BUDGET_MS * 100)}%"></i></span>${share(s.gpu_p95)}</td><td class="r ${hTone(s.hitch)}">${fmt(s.hitch)} ms/s</td><td class="r">${int(s.dropped)}</td></tr>`).join("")}
+  </tbody></table></div></section>` : ""}
+
+  ${cells.length ? `<section><h2>Heaviest scene and phone pairs</h2><div class="wide"><table>
+    <thead><tr><th>Phone</th><th>Scene</th><th class="r">GPU p95</th><th class="r">Frame p95</th><th class="r">Frames</th></tr></thead><tbody>
+    ${cells.map(c => `<tr><td>${esc(deviceName(c.device))}</td><td>${esc(c.scene)}</td><td class="r ${tone(c.gpu_p95)}">${c.gpu_p95 > 0 ? fmt(c.gpu_p95) + " ms" : "–"}</td><td class="r">${fmt(c.frame_p95)} ms</td><td class="r">${int(c.frames)}</td></tr>`).join("")}
+  </tbody></table></div></section>` : ""}
+
+  ${thermalTotal ? `<section><h2>Heat</h2>
+    <div class="heat">${heatRows.map(r => `<span style="flex:${r.n};background:${{ Cool: "#f1e6d8", Warm: "#ffb020", Hot: "#ff5a1f", Critical: "#c42a00" }[r.label]}"></span>`).join("")}</div>
+    <div class="legend">${heatRows.map(r => `<span><i style="background:${{ Cool: "#e3d4c2", Warm: "#ffb020", Hot: "#ff5a1f", Critical: "#c42a00" }[r.label]}"></i>${esc(r.label)} ${fmt(r.n / thermalTotal * 100, 0)}% of reports</span>`).join("")}</div>
+  </section>` : ""}
+
+  ${vs.length ? `<section><h2>Builds</h2><div class="wide"><table>
+    <thead><tr><th>Build</th><th class="r">Sessions</th><th class="r">FPS</th><th class="r">Frame p95</th><th class="r">GPU p95</th><th class="r">Hitch</th></tr></thead><tbody>
+    ${vs.map(v => `<tr><td>${esc(appName(v.app))} <span style="color:var(--muted)">${esc(v.version)}</span></td><td class="r">${int(v.sessions)}</td><td class="r">${fmt(v.fps)}</td><td class="r">${fmt(v.frame_p95)} ms</td><td class="r">${v.gpu_p95 > 0 ? fmt(v.gpu_p95) + " ms" : "–"}</td><td class="r ${hTone(v.hitch)}">${fmt(v.hitch)} ms/s</td></tr>`).join("")}
+  </tbody></table></div></section>` : ""}
+
+  <section class="notes"><h2>How to read this</h2>
+    <p><b>Hitch time</b> adds up how late every dropped frame was and divides by the time in use. Under 5 ms/s is smooth, 5 to 10 is noticeable, over 10 is stutter.</p>
+    <p><b>p95</b> is the value 95% of frames are faster than. At 60 fps a frame has 16.7 ms; a scene whose GPU p95 is over 75% of that has little margin left.</p>
+    <p>Measured on real phones during normal use, summarized every 30 seconds. Full method: <a href="https://evamariadreams.com/octimonitor/docs/">evamariadreams.com/octimonitor/docs</a></p>
+  </section>
+</main>
+<footer><span>OctiMonitor by EvaMariaDreams</span><span>Live view: <a href="${esc(location.href)}">${esc(location.host + location.pathname)}</a></span></footer>
+</div></body></html>`;
+      const slug = s => String(s).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+      return { html, name: `octimonitor-report-${slug(scope)}-${slug(range)}-${now.toISOString().slice(0, 10)}.html` };
+    }
+    function downloadReport() {
+      const r = buildReport(); if (!r) return;
+      const url = URL.createObjectURL(new Blob([r.html], { type: "text/html" }));
+      // Phones open the report in a new tab, where Share → Print or "Save as PDF" turns it into a PDF;
+      // computers download the file.
+      if (matchMedia("(hover: none)").matches && window.open(url, "_blank")) { toast("Report opened"); }
+      else { const a = document.createElement("a"); a.href = url; a.download = r.name; document.body.appendChild(a); a.click(); a.remove(); toast("Report downloaded"); }
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    }
+
     // ---------- controls ----------
     function setMetric(m) {
       if (state.metric !== m) state.metricChanged = true;
@@ -1471,7 +1670,8 @@
     $("app").addEventListener("change", e => { state.app = e.target.value; syncUrl(); refresh(); });
     $("baseline").addEventListener("change", e => { state.compare.base = e.target.value; renderCompare(); });
     $("candidate").addEventListener("change", e => { state.compare.cand = e.target.value; renderCompare(); });
-    $("export").addEventListener("click", exportCsv);
+    $("export").addEventListener("click", downloadReport);
+    $("exportMobile").addEventListener("click", downloadReport);
     $("share").addEventListener("click", async () => {
       syncUrl();
       try { await navigator.clipboard.writeText(location.href); toast("Link copied"); }
@@ -1575,7 +1775,7 @@
       [...new Set((d.device_scene || []).map(c => c.device))].forEach(dv => add("Inspect phone", deviceName(dv), () => { select({ device: dv }); goTo("inspector"); }));
       add("Actions", "Refresh now", () => refresh(true), "R");
       add("Actions", "Copy link to this view", () => $("share").click());
-      if (!$("export").disabled) add("Actions", "Export CSV", exportCsv);
+      if (!$("export").disabled) { add("Actions", "Download report", downloadReport); add("Actions", "Export raw data (CSV)", exportCsv); }
       add("Actions", "How every number is measured", () => { location.href = "docs/"; });
       return list;
     }
