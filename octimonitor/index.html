@@ -1091,9 +1091,16 @@
       const step = [1, 2, 5, 10].map(k => k * mag).find(v => v >= rawTop / 5);
       const top = Math.ceil(rawTop / step) * step;
       const close = m.ref.length > 1 && (m.ref[m.ref.length - 1].y - m.ref[0].y) / top < 0.08;
+      // Labels sit at the right end of their line. If the newest value runs just above the line, the label
+      // goes underneath instead, so it never covers the data.
+      const lastVal = [...rows].reverse().map(r => r[state.metric]).find(v => v != null);
+      const labelSide = (y, preferred) => {
+        if (lastVal == null || Math.abs(lastVal - y) / top > 0.14) return preferred;
+        return lastVal >= y ? "insideEndBottom" : "insideEndTop";
+      };
       const refLines = close
-        ? m.ref.map((r, i) => ({ yAxis: r.y, label: i === m.ref.length - 1 ? { formatter: m.ref.map(q => `${q.label} ${q.y}`).join(" · "), position: "insideEndTop" } : { show: false } }))
-        : m.ref.map((r, i) => ({ yAxis: r.y, label: { formatter: r.label, position: m.ref.length > 1 && i === 0 ? "insideEndBottom" : "insideEndTop" } }));
+        ? m.ref.map((r, i) => ({ yAxis: r.y, label: i === m.ref.length - 1 ? { formatter: m.ref.map(q => `${q.label} ${q.y}`).join(" · "), position: labelSide(r.y, "insideEndTop") } : { show: false } }))
+        : m.ref.map((r, i) => ({ yAxis: r.y, label: { formatter: r.label, position: labelSide(r.y, m.ref.length > 1 && i === 0 ? "insideEndBottom" : "insideEndTop") } }));
       const viewKey = `${state.app}|${state.hours}`;
       const prev = c.__view === viewKey && c.getOption && c.getOption();
       // Long ranges (30 days of hourly points) open on the most recent stretch, sized to the screen,
@@ -1110,6 +1117,7 @@
           const r = rows[p[0].dataIndex];
           return `<b>${esc(x[p[0].dataIndex])}</b><br>${m.label} <b>${fmt(r[state.metric], m.digits)} ${m.unit}</b><br><span style="color:${ASH}">Frame p95 ${fmt(r.frame_p95)} ms, ${fmt(r.fps)} fps, hitch ${fmt(r.hitch)} ms/s</span>`;
         } }),
+        grid: { left: 4, right: 30, top: 22, bottom: 4, containLabel: true },
         dataZoom: [{ type: "inside", start: zoom.start, end: zoom.end, zoomOnMouseWheel: true, moveOnMouseMove: true }],
         xAxis: catAxis({ data: x, boundaryGap: single }),
         // Headroom above the highest point so the line's glow never touches the top edge
@@ -1121,9 +1129,14 @@
           lineStyle: Object.assign({ width: 3, color: grad([0, 0, 1, 0], [[0, AMBER], [1, EMBER]]), cap: "round", join: "round" }, glow("rgba(255,90,31,.55)", 18)),
           itemStyle: { color: "#fff1d6", borderColor: EMBER, borderWidth: 3 },
           emphasis: { scale: 1.6, itemStyle: { color: WHITE, borderColor: AMBER, borderWidth: 3, shadowBlur: 20, shadowColor: "rgba(255,176,32,.8)" } },
-          areaStyle: { color: fade("255,90,31", 0.42) },
-          markLine: { silent: true, symbol: "none", lineStyle: { color: ASH2, type: "dashed", width: 1 },
-                      label: { color: ASH, position: "insideEndTop", fontSize: 11 },
+          areaStyle: { color: fade("255,90,31", 0.42) }
+        }, {
+          // Threshold lines live in their own series drawn above the data, and their labels sit on a small
+          // dark pill, so the data line can never run through the text
+          type: "line", data: [], z: 5, silent: true, tooltip: { show: false },
+          markLine: { silent: true, symbol: "none", z: 5, animation: false, lineStyle: { color: ASH2, type: "dashed", width: 1 },
+                      label: { color: ASH, position: "insideEndTop", fontSize: 11, distance: 4, padding: [3, 7], borderRadius: 6,
+                               backgroundColor: "rgba(14, 12, 10, 0.88)" },
                       data: refLines }
         }]
       }), rebuild);
