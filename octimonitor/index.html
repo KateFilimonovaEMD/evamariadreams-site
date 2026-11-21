@@ -312,33 +312,21 @@
     .combined-note { display: inline-block; margin-left: 8px; font-size: 12px; font-weight: 500; color: var(--amber); font-family: var(--text); letter-spacing: 0; vertical-align: baseline; }
 
     /* Scene x device matrix */
-    .matrix-wrap { overflow: visible; margin: -12px -24px -26px; padding: 18px 24px 40px; }  /* room for tile glows */
-    /* Wider than the panel: a scroll box with a thin dark scrollbar that clears the legend below,
-       soft fades on the sides that have more tiles, and drag-to-scroll with a mouse. */
-    .matrix-wrap.scrolls { overflow-x: auto; margin-bottom: -6px; padding-bottom: 22px; cursor: grab;
-      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.22) transparent; overscroll-behavior-x: contain;
-      --fl: 0px; --fr: 0px;
-      -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--fl), #000 calc(100% - var(--fr)), transparent 100%);
-              mask-image: linear-gradient(90deg, transparent 0, #000 var(--fl), #000 calc(100% - var(--fr)), transparent 100%); }
-    /* Once scrolled, phone names stay pinned on the left over a soft backdrop */
-    .matrix-wrap.scrolls .mx-dev, .matrix-wrap.scrolls .mx-corner { position: sticky; left: 0; z-index: 3; }
-    .matrix-wrap.scrolls .mx-dev::before, .matrix-wrap.scrolls .mx-corner::before { content: ""; position: absolute; z-index: -1;
-      inset: -6px -34px -6px -26px; opacity: 0; transition: opacity .25s; pointer-events: none;
-      background: linear-gradient(90deg, rgb(19,15,12) calc(100% - 34px), rgba(19,15,12,0)); }
-    .matrix-wrap.scrolls .mx-corner::before { top: -18px; }
-    .matrix-wrap.scrolls.more-left .mx-dev::before, .matrix-wrap.scrolls.more-left .mx-corner::before { opacity: 1; }
-    .matrix-wrap.scrolls.more-right { --fr: 56px; }
-    .matrix-wrap.scrolls.dragging { cursor: grabbing; user-select: none; }
-    .matrix-wrap.scrolls::-webkit-scrollbar { height: 8px; }
-    .matrix-wrap.scrolls::-webkit-scrollbar-track { background: transparent; margin: 0 24px; }
-    .matrix-wrap.scrolls::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
-    .matrix-wrap.scrolls::-webkit-scrollbar-thumb:hover { background-color: rgba(255,255,255,.32); }
-    .matrix { display: grid; gap: 10px; align-items: stretch; min-width: max-content; }
-    .mx-head, .mx-dev { font-size: 13px; font-weight: 600; color: var(--white); background: none; border: 0; cursor: pointer; padding: 4px 6px; border-radius: 10px; text-align: center; transition: color .2s, background .2s; }
+    .matrix-wrap { overflow: visible; margin: -12px -24px -26px; padding: 18px 24px 30px; }  /* room for tile glows */
+    /* One block per phone: its name, then its scenes in up to five columns, most expensive first */
+    .matrix { display: grid; gap: 10px; align-items: stretch; grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr)); }
+    .matrix .mx-dev { grid-column: 1 / -1; justify-self: start; padding: 6px 8px; margin: 6px 0 -2px -8px; font-size: 14px; }
+    .matrix .mx-dev:first-child { margin-top: 0; }
+    .mx-more { display: flex; justify-content: center; margin-top: 14px; }
+    .mx-more button { font: 600 13px var(--text); color: var(--white); background: rgba(255,247,238,.05); border: 0; border-radius: 999px; padding: 9px 18px; cursor: pointer;
+      box-shadow: inset 0 0 0 1px rgba(255,247,238,.12); transition: background .2s, box-shadow .2s; }
+    .mx-more button:hover { background: rgba(255,247,238,.09); box-shadow: inset 0 0 0 1px rgba(255,247,238,.22); }
+    .mx-more button:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+    .mx-dev { font-size: 13px; font-weight: 600; color: var(--white); background: none; border: 0; cursor: pointer; padding: 4px 6px; border-radius: 10px; text-align: center; transition: color .2s, background .2s; }
     .mx-dev { text-align: left; display: flex; align-items: center; }
-    .mx-head:hover, .mx-dev:hover { background: rgba(255,247,238,.06); }
-    .mx-head.on, .mx-dev.on { color: var(--amber); }
-    .mx-cell { position: relative; text-align: left; color: var(--white); cursor: pointer; border: 0; border-radius: 16px; padding: 12px 14px 12px; min-height: 92px;
+    .mx-dev:hover { background: rgba(255,247,238,.06); }
+    .mx-dev.on { color: var(--amber); }
+    .mx-cell { position: relative; text-align: left; color: var(--white); cursor: pointer; border: 0; border-radius: 16px; padding: 12px 14px 12px;
       background: linear-gradient(140deg, rgba(var(--rgb), .30), rgba(var(--rgb), .07) 60%, rgba(255,247,238,.02));
       box-shadow: inset 0 0 0 1px rgba(var(--rgb), .38), inset 0 1px 0 rgba(255,247,238,.10);
       transition: transform .45s var(--spring), opacity .3s ease, box-shadow .3s ease; }
@@ -351,11 +339,10 @@
     .mx-bar i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: linear-gradient(90deg, #ffd08a, #ff8a2a 60%, #ff3d00); }
     .mx-meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 7px; font-size: 12px; color: var(--ash); font-variant-numeric: tabular-nums; }
     .mx-over { color: #ff7a4a; font-weight: 700; }
-    .mx-empty { border-radius: 16px; min-height: 92px; display: grid; place-items: center; color: var(--ash-2); font-size: 12px; box-shadow: inset 0 0 0 1px rgba(255,247,238,.06); background: repeating-linear-gradient(135deg, rgba(255,247,238,.025) 0 8px, transparent 8px 16px); }
-    .mx-name { display: block; font-size: 12px; font-weight: 600; color: var(--ash); margin-bottom: 4px; }
-    .matrix.compact { min-width: 0; grid-template-columns: 1fr 1fr !important; gap: 8px; }
-    .matrix.compact .mx-dev { grid-column: 1 / -1; padding: 10px 2px 2px; font-size: 14px; }
-    .matrix.compact .mx-cell, .matrix.compact .mx-empty { min-height: 0; padding: 10px 12px; }
+    .mx-name { display: block; font-size: 13px; font-weight: 600; color: var(--white); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .matrix.compact { gap: 8px; }
+    .matrix.compact .mx-cell { padding: 10px 12px; }
+    .matrix.compact .mx-name { font-size: 12px; color: var(--ash); margin-bottom: 4px; }
     .matrix.compact .mx-val { font-size: 20px; }
     .mx-legend { display: flex; align-items: center; justify-content: center; gap: 10px; margin-top: 16px; font-size: 12px; color: var(--ash); }
     .mx-legend span.scale { width: 180px; height: 6px; border-radius: 999px; background: linear-gradient(90deg, rgb(255,214,150), rgb(255,170,40) 50%, rgb(255,100,30) 80%, rgb(255,45,0)); }
@@ -681,9 +668,10 @@
       <section class="grid">
         <article class="panel glass" id="pHeatmap">
           <h2>Scene × device<span class="combined-note" data-combined hidden>all apps combined</span></h2>
-          <p class="note">GPU time p95 for each scene on each phone model seen, and how much of its frame budget it uses (16.7&nbsp;ms at 60&nbsp;fps, 8.3&nbsp;ms at 120&nbsp;fps). Click a tile, a scene or a phone to inspect it.</p>
+          <p class="note">GPU time p95 for each scene on each phone model seen, and how much of its frame budget it uses (16.7&nbsp;ms at 60&nbsp;fps, 8.3&nbsp;ms at 120&nbsp;fps). The most expensive scenes come first. Click a tile or a phone to inspect it.</p>
           <p class="empty no-gpu" data-nogpu hidden>No GPU time in this view, so there is nothing to compare across phones yet.</p>
           <div class="matrix-wrap"><div class="matrix" id="cHeat" role="grid" aria-label="GPU time by scene and device"></div></div>
+          <div class="mx-more" id="heatMore" hidden><button type="button" aria-controls="cHeat">Show more</button></div>
           <div class="mx-legend" aria-hidden="true"><span>headroom</span><span class="scale"></span><span>over budget</span></div>
         </article>
       </section>
@@ -1281,78 +1269,61 @@
       return stops[stops.length - 1][1].join(",");
     }
 
+    // Columns that fit the panel: up to 5 on wide screens, 2 on phones
+    function heatCols() {
+      const w = $("cHeat").clientWidth || innerWidth;
+      return innerWidth < 600 ? 2 : Math.max(2, Math.min(5, Math.floor((w + 10) / 190)));
+    }
+
     function renderHeat() {
       const box = $("cHeat");
       const cells = state.data.device_scene || [];
-      const scenes = [...new Set(cells.map(r => r.scene))].sort();
       const devices = [...new Set(cells.map(r => r.device))].sort();
       const { scene: ps, device: pd } = state.sel;
       const kfmt = n => n >= 1000 ? `${fmt(n / 1000, n >= 10000 ? 0 : 1)}k` : int(n);
-      // Phones get one block per device with tiles in two columns; wider screens get the full grid.
       const compact = innerWidth < 600;
+      const cols = heatCols();
       box.classList.toggle("compact", compact);
-      box.style.gridTemplateColumns = compact ? "" : `minmax(110px, auto) repeat(${scenes.length}, minmax(150px, 1fr))`;
-      let html = compact ? "" : `<span class="mx-corner"></span>` + scenes.map(sc => `<button type="button" class="mx-head${ps === sc ? " on" : ""}" data-scene="${esc(sc)}">${esc(sc)}</button>`).join("");
-      for (const dv of devices) {
+      box.style.setProperty("--cols", cols);
+      const shareOf = c => (c.gpu_p95 || 0) / budgetOf(c);
+      // Collapsed, the grid shows three rows of tiles in total; whole phones first, the rest on request.
+      // A selected tile is never hidden.
+      const blocks = devices.map(dv => ({ dv, tiles: cells.filter(r => r.device === dv).sort((a, b) => shareOf(b) - shareOf(a) || String(a.scene).localeCompare(b.scene)) }));
+      const total = blocks.reduce((n, b) => n + b.tiles.length, 0);
+      // How many tiles of each phone fit in three rows
+      let rowsLeft = 3;
+      const fit = blocks.map(({ tiles }) => { const n = Math.min(tiles.length, rowsLeft * cols); rowsLeft -= Math.ceil(n / cols); return n; });
+      const collapsible = fit.reduce((a, b) => a + b, 0) < total;
+      if (!collapsible) state.heatOpen = false;
+      const selHidden = blocks.some(({ dv, tiles }, i) => dv === pd && tiles.slice(fit[i]).some(c => c.scene === ps));
+      if (selHidden && !state.heatOpen) state.heatOpen = true;
+      let shown = 0, html = "";
+      for (const [i, { dv, tiles }] of blocks.entries()) {
+        const limit = state.heatOpen ? tiles.length : fit[i];
+        if (limit <= 0) continue;
         html += `<button type="button" class="mx-dev${pd === dv ? " on" : ""}" data-device="${esc(dv)}">${esc(deviceName(dv))}</button>`;
-        for (const sc of scenes) {
-          const c = cells.find(r => r.scene === sc && r.device === dv);
-          if (!c) { if (!compact) html += `<div class="mx-empty">not played</div>`; continue; }
-          const share = (c.gpu_p95 || 0) / budgetOf(c);
+        tiles.slice(0, limit).forEach(c => {
+          const sc = c.scene, share = shareOf(c);
           const on = (!ps || sc === ps) && (!pd || dv === pd);
           const sel = ps === sc && pd === dv;
           html += `<button type="button" class="mx-cell${on ? "" : " dim"}${sel ? " sel" : ""}" style="--rgb:${heatRgb(share)}" data-scene="${esc(sc)}" data-device="${esc(dv)}"
               aria-label="${esc(sc)} on ${esc(deviceName(dv))}: GPU ${fmt(c.gpu_p95)} ms, ${fmt(share * 100, 0)}% of the ${targetOf(c)} fps frame">
-            ${compact ? `<span class="mx-name">${esc(sc)}</span>` : ""}<span class="mx-val">${c.gpu_p95 > 0 ? fmt(c.gpu_p95) : "–"}<small>ms GPU</small></span>
+            <span class="mx-name" title="${esc(sc)}">${esc(sc)}</span><span class="mx-val">${c.gpu_p95 > 0 ? fmt(c.gpu_p95) : "–"}<small>ms GPU</small></span>
             <span class="mx-bar"><i style="width:${Math.min(100, share * 100)}%"></i></span>
             <span class="mx-meta"><span class="${share > 1 ? "mx-over" : ""}">${!(c.gpu_p95 > 0) ? "GPU not measured" : share > 1 ? "over budget" : fmt(share * 100, 0) + "% of frame"}</span>${compact ? "" : `<span>${kfmt(c.frames || 0)} frames</span>`}</span>
           </button>`;
-        }
+          shown++;
+        });
       }
       box.innerHTML = html;
-      // Only become a scroll box (which clips glows) when the grid is actually wider than the panel
-      const wrap = box.parentElement;
-      wrap.classList.remove("scrolls");
-      if (box.scrollWidth > wrap.clientWidth - 48) wrap.classList.add("scrolls");
-      matrixEdges(wrap);
+      const more = $("heatMore"), hidden = total - shown;
+      const gpuShown = !document.querySelector("#pHeatmap .matrix-wrap").hidden;
+      more.hidden = !gpuShown || !collapsible;
+      more.querySelector("button").textContent = state.heatOpen ? "Show less" : `Show ${hidden} more`;
+      more.querySelector("button").setAttribute("aria-expanded", String(!!state.heatOpen));
       box.querySelectorAll(".mx-cell").forEach(b => b.addEventListener("click", () => select({ scene: b.dataset.scene, device: b.dataset.device })));
-      box.querySelectorAll(".mx-head").forEach(b => b.addEventListener("click", () => select({ scene: b.dataset.scene, device: null })));
       box.querySelectorAll(".mx-dev").forEach(b => b.addEventListener("click", () => select({ scene: null, device: b.dataset.device })));
     }
-
-    // Fades only on the sides where more tiles are hidden
-    function matrixEdges(wrap) {
-      const on = wrap.classList.contains("scrolls");
-      wrap.classList.toggle("more-left", on && wrap.scrollLeft > 4);
-      wrap.classList.toggle("more-right", on && wrap.scrollLeft + wrap.clientWidth < wrap.scrollWidth - 4);
-    }
-    (function matrixScrolling() {
-      const wrap = document.querySelector("#pHeatmap .matrix-wrap");
-      if (!wrap) return;
-      wrap.addEventListener("scroll", () => matrixEdges(wrap), { passive: true });
-      addEventListener("resize", () => matrixEdges(wrap), { passive: true });
-      // Drag with a mouse (touch already scrolls natively); a drag never counts as a tile click
-      let startX = 0, startLeft = 0, dragging = false, moved = false;
-      wrap.addEventListener("pointerdown", e => {
-        if (e.pointerType !== "mouse" || e.button !== 0 || !wrap.classList.contains("scrolls")) return;
-        dragging = true; moved = false; startX = e.clientX; startLeft = wrap.scrollLeft;
-      });
-      addEventListener("pointermove", e => {
-        if (!dragging) return;
-        const dx = e.clientX - startX;
-        if (!moved && Math.abs(dx) > 5) { moved = true; wrap.classList.add("dragging"); }
-        if (moved) wrap.scrollLeft = startLeft - dx;
-      });
-      addEventListener("pointerup", () => {
-        if (!dragging) return;
-        dragging = false; wrap.classList.remove("dragging");
-        if (!moved) return;
-        // Swallow the click that ends this drag, and only that one
-        const swallow = e => { e.stopPropagation(); e.preventDefault(); };
-        wrap.addEventListener("click", swallow, { capture: true, once: true });
-        setTimeout(() => wrap.removeEventListener("click", swallow, { capture: true }), 0);
-      });
-    })();
 
     // When a chart has nothing meaningful to draw, show one plain sentence in its place instead of empty axes
     function chartNote(id, msg) {
@@ -1933,8 +1904,13 @@
         st.classList.add("pressed"); clearTimeout(st._t); st._t = setTimeout(() => st.classList.remove("pressed"), 1400);
       }));
     }
-    let wasCompact = innerWidth < 600;
-    addEventListener("resize", () => { const c = innerWidth < 600; if (c !== wasCompact && state.data) { wasCompact = c; renderHeat(); } });
+    let lastHeatCols = 0;
+    addEventListener("resize", () => { if (!state.data) return; const c = heatCols(); if (c !== lastHeatCols) { lastHeatCols = c; renderHeat(); } });
+    $("heatMore").querySelector("button").addEventListener("click", () => {
+      state.heatOpen = !state.heatOpen;
+      renderHeat();
+      if (!state.heatOpen) $("pHeatmap").scrollIntoView({ block: "nearest", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+    });
     (document.fonts ? document.fonts.ready : Promise.resolve()).then(phasePipeline);
     phasePipeline();
 

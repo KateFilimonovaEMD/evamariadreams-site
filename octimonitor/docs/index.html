@@ -396,7 +396,7 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
               <tr><td>Over time</td><td>Frame p95, fps or hitch time per time bucket, with the budget and threshold lines</td></tr>
               <tr><td>GPU per scene</td><td>GPU p95 per scene against its frame budget</td></tr>
               <tr><td>Inspector</td><td>A selected scene, phone or pair in detail. Only this panel is filtered; the rest of the page always covers everything in view, and says so</td></tr>
-              <tr><td>Scene × device</td><td>GPU p95 for each scene on each phone model. Tile colour is the share of its frame budget</td></tr>
+              <tr><td>Scene × device</td><td>GPU p95 for each scene on each phone model, most expensive first. Three rows are shown, the rest on request. Tile colour is the share of its frame budget</td></tr>
               <tr><td>Heat over a session</td><td>Hitch time and share of sessions in serious heat by minute of use. When both rise together, throttling is a likely cause; it is a correlation, not proof</td></tr>
               <tr><td>Build comparison</td><td>Two builds of the same app, compared only on the phone models both ran on, each weighted the same, with sessions and frames shown. No verdict until each side has at least 3 sessions and 5,000 frames</td></tr>
               <tr><td>Latest reports</td><td>The 12 newest 30-second windows, showing the scene used most in each</td></tr>
