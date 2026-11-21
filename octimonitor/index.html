@@ -313,7 +313,26 @@
 
     /* Scene x device matrix */
     .matrix-wrap { overflow: visible; margin: -12px -24px -26px; padding: 18px 24px 40px; }  /* room for tile glows */
-    .matrix-wrap.scrolls { overflow-x: auto; }
+    /* Wider than the panel: a scroll box with a thin dark scrollbar that clears the legend below,
+       soft fades on the sides that have more tiles, and drag-to-scroll with a mouse. */
+    .matrix-wrap.scrolls { overflow-x: auto; margin-bottom: -6px; padding-bottom: 22px; cursor: grab;
+      scrollbar-width: thin; scrollbar-color: rgba(255,255,255,.22) transparent; overscroll-behavior-x: contain;
+      --fl: 0px; --fr: 0px;
+      -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 var(--fl), #000 calc(100% - var(--fr)), transparent 100%);
+              mask-image: linear-gradient(90deg, transparent 0, #000 var(--fl), #000 calc(100% - var(--fr)), transparent 100%); }
+    /* Once scrolled, phone names stay pinned on the left over a soft backdrop */
+    .matrix-wrap.scrolls .mx-dev, .matrix-wrap.scrolls .mx-corner { position: sticky; left: 0; z-index: 3; }
+    .matrix-wrap.scrolls .mx-dev::before, .matrix-wrap.scrolls .mx-corner::before { content: ""; position: absolute; z-index: -1;
+      inset: -6px -34px -6px -26px; opacity: 0; transition: opacity .25s; pointer-events: none;
+      background: linear-gradient(90deg, rgb(19,15,12) calc(100% - 34px), rgba(19,15,12,0)); }
+    .matrix-wrap.scrolls .mx-corner::before { top: -18px; }
+    .matrix-wrap.scrolls.more-left .mx-dev::before, .matrix-wrap.scrolls.more-left .mx-corner::before { opacity: 1; }
+    .matrix-wrap.scrolls.more-right { --fr: 56px; }
+    .matrix-wrap.scrolls.dragging { cursor: grabbing; user-select: none; }
+    .matrix-wrap.scrolls::-webkit-scrollbar { height: 8px; }
+    .matrix-wrap.scrolls::-webkit-scrollbar-track { background: transparent; margin: 0 24px; }
+    .matrix-wrap.scrolls::-webkit-scrollbar-thumb { background: rgba(255,255,255,.18); border-radius: 999px; border: 2px solid transparent; background-clip: padding-box; }
+    .matrix-wrap.scrolls::-webkit-scrollbar-thumb:hover { background-color: rgba(255,255,255,.32); }
     .matrix { display: grid; gap: 10px; align-items: stretch; min-width: max-content; }
     .mx-head, .mx-dev { font-size: 13px; font-weight: 600; color: var(--white); background: none; border: 0; cursor: pointer; padding: 4px 6px; border-radius: 10px; text-align: center; transition: color .2s, background .2s; }
     .mx-dev { text-align: left; display: flex; align-items: center; }
@@ -1273,7 +1292,7 @@
       const compact = innerWidth < 600;
       box.classList.toggle("compact", compact);
       box.style.gridTemplateColumns = compact ? "" : `minmax(110px, auto) repeat(${scenes.length}, minmax(150px, 1fr))`;
-      let html = compact ? "" : `<span></span>` + scenes.map(sc => `<button type="button" class="mx-head${ps === sc ? " on" : ""}" data-scene="${esc(sc)}">${esc(sc)}</button>`).join("");
+      let html = compact ? "" : `<span class="mx-corner"></span>` + scenes.map(sc => `<button type="button" class="mx-head${ps === sc ? " on" : ""}" data-scene="${esc(sc)}">${esc(sc)}</button>`).join("");
       for (const dv of devices) {
         html += `<button type="button" class="mx-dev${pd === dv ? " on" : ""}" data-device="${esc(dv)}">${esc(deviceName(dv))}</button>`;
         for (const sc of scenes) {
@@ -1295,10 +1314,45 @@
       const wrap = box.parentElement;
       wrap.classList.remove("scrolls");
       if (box.scrollWidth > wrap.clientWidth - 48) wrap.classList.add("scrolls");
+      matrixEdges(wrap);
       box.querySelectorAll(".mx-cell").forEach(b => b.addEventListener("click", () => select({ scene: b.dataset.scene, device: b.dataset.device })));
       box.querySelectorAll(".mx-head").forEach(b => b.addEventListener("click", () => select({ scene: b.dataset.scene, device: null })));
       box.querySelectorAll(".mx-dev").forEach(b => b.addEventListener("click", () => select({ scene: null, device: b.dataset.device })));
     }
+
+    // Fades only on the sides where more tiles are hidden
+    function matrixEdges(wrap) {
+      const on = wrap.classList.contains("scrolls");
+      wrap.classList.toggle("more-left", on && wrap.scrollLeft > 4);
+      wrap.classList.toggle("more-right", on && wrap.scrollLeft + wrap.clientWidth < wrap.scrollWidth - 4);
+    }
+    (function matrixScrolling() {
+      const wrap = document.querySelector("#pHeatmap .matrix-wrap");
+      if (!wrap) return;
+      wrap.addEventListener("scroll", () => matrixEdges(wrap), { passive: true });
+      addEventListener("resize", () => matrixEdges(wrap), { passive: true });
+      // Drag with a mouse (touch already scrolls natively); a drag never counts as a tile click
+      let startX = 0, startLeft = 0, dragging = false, moved = false;
+      wrap.addEventListener("pointerdown", e => {
+        if (e.pointerType !== "mouse" || e.button !== 0 || !wrap.classList.contains("scrolls")) return;
+        dragging = true; moved = false; startX = e.clientX; startLeft = wrap.scrollLeft;
+      });
+      addEventListener("pointermove", e => {
+        if (!dragging) return;
+        const dx = e.clientX - startX;
+        if (!moved && Math.abs(dx) > 5) { moved = true; wrap.classList.add("dragging"); }
+        if (moved) wrap.scrollLeft = startLeft - dx;
+      });
+      addEventListener("pointerup", () => {
+        if (!dragging) return;
+        dragging = false; wrap.classList.remove("dragging");
+        if (!moved) return;
+        // Swallow the click that ends this drag, and only that one
+        const swallow = e => { e.stopPropagation(); e.preventDefault(); };
+        wrap.addEventListener("click", swallow, { capture: true, once: true });
+        setTimeout(() => wrap.removeEventListener("click", swallow, { capture: true }), 0);
+      });
+    })();
 
     // When a chart has nothing meaningful to draw, show one plain sentence in its place instead of empty axes
     function chartNote(id, msg) {
