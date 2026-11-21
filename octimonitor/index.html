@@ -821,6 +821,39 @@
     const lbl = extra => Object.assign({ color: ASH2, hideOverlap: true }, extra);
     const catAxis = extra => Object.assign({ type: "category", axisLine: { lineStyle: { color: LINE } }, axisTick: { show: false },
       axisLabel: { color: ASH2 } }, extra || {});
+    // Area fills as a pre-dithered vertical gradient. A plain canvas gradient is quantized to 8 bits and
+    // shows steps on large, bright screens (tablets especially); adding sub-step random noise to each
+    // pixel's alpha spreads those steps into grain the eye averages back into a smooth fade.
+    const ditherCache = new Map();
+    function ditherFill(heightCss, topCss, rgb, a0) {
+      const dpr = Math.max(1, Math.min(3, devicePixelRatio || 1));
+      const h = Math.max(2, Math.round(heightCss * dpr)), w = 64;
+      const key = `${rgb}|${a0}|${h}`;
+      if (!ditherCache.has(key)) {
+        const c = document.createElement("canvas"); c.width = w; c.height = h;
+        const ctx = c.getContext("2d"), img = ctx.createImageData(w, h), px = img.data;
+        const [r, g, b] = rgb;
+        for (let y = 0; y < h; y++) {
+          const a = a0 * Math.pow(1 - y / (h - 1), 2.2) * 255;   // smooth fade, no kinks between stops
+          for (let x = 0; x < w; x++) {
+            const i = (y * w + x) * 4;
+            px[i] = r; px[i + 1] = g; px[i + 2] = b;
+            px[i + 3] = Math.min(255, Math.floor(a + Math.random()));
+          }
+        }
+        ctx.putImageData(img, 0, 0);
+        if (ditherCache.size > 24) ditherCache.clear();
+        ditherCache.set(key, c);
+      }
+      return { image: ditherCache.get(key), repeat: "repeat-x", x: 0, y: topCss, scaleX: 1 / dpr, scaleY: 1 / dpr };
+    }
+    // The fill runs from the highest point of the line to the axis, like a gradient over the area's own box.
+    function ditherArea(c, values, rgb, a0) {
+      const vals = values.filter(v => v != null && isFinite(v)); if (!vals.length) return;
+      const top = c.convertToPixel({ yAxisIndex: 0 }, Math.max(...vals)), bottom = c.convertToPixel({ yAxisIndex: 0 }, 0);
+      if (!isFinite(top) || !isFinite(bottom) || bottom - top < 2) return;
+      c.setOption({ series: [{ areaStyle: { color: ditherFill(bottom - top, top, rgb, a0) } }] });
+    }
     const grad = (dir, stops) => new echarts.graphic.LinearGradient(dir[0], dir[1], dir[2], dir[3], stops.map(([o, c]) => ({ offset: o, color: c })));
 
     // ---------- data ----------
@@ -1079,12 +1112,13 @@
           lineStyle: Object.assign({ width: 3, color: grad([0, 0, 1, 0], [[0, AMBER], [1, EMBER]]), cap: "round", join: "round" }, glow("rgba(255,90,31,.55)", 18)),
           itemStyle: { color: "#fff1d6", borderColor: EMBER, borderWidth: 3 },
           emphasis: { scale: 1.6, itemStyle: { color: WHITE, borderColor: AMBER, borderWidth: 3, shadowBlur: 20, shadowColor: "rgba(255,176,32,.8)" } },
-          areaStyle: { color: grad([0, 0, 0, 1], [[0, "rgba(255,90,31,0.42)"], [0.6, "rgba(255,90,31,0.08)"], [1, "rgba(255,90,31,0)"]]) },
+          areaStyle: { color: "rgba(255,90,31,0.12)" },
           markLine: { silent: true, symbol: "none", lineStyle: { color: ASH2, type: "dashed", width: 1 },
                       label: { color: ASH, position: "insideEndTop", fontSize: 11 },
                       data: refLines }
         }]
       }), rebuild);
+      ditherArea(c, rows.map(r => r[state.metric]), [255, 90, 31], 0.42);
       state.metricChanged = false;
     }
 
@@ -1191,8 +1225,9 @@
         series: [{ type: "line", data: rows.map(r => r.hitch), smooth: 0.45, smoothMonotone: "x", showSymbol: rows.length < 25, symbolSize: 8,
                    lineStyle: Object.assign({ width: 3, color: AMBER, cap: "round" }, glow("rgba(255,176,32,.5)", 16)),
                    itemStyle: { color: "#fff1d6", borderColor: AMBER, borderWidth: 3 },
-                   areaStyle: { color: grad([0, 0, 0, 1], [[0, "rgba(255,176,32,0.32)"], [1, "rgba(255,176,32,0)"]]) } }]
+                   areaStyle: { color: "rgba(255,176,32,0.1)" } }]
       }));
+      if (c1) ditherArea(c1, rows.map(r => r.hitch), [255, 176, 32], 0.32);
       const c2 = chart("cMinutesHot");
       if (c2) apply(c2, Object.assign(base(), {
         tooltip: tip(r => `Running hot <b>${fmt((r.hot_share || 0) * 100, 0)}%</b>`),
