@@ -421,7 +421,8 @@
     .pipe-line { position: absolute; left: 12.5%; right: 12.5%; top: 25px; height: 2px; border-radius: 2px;
       background: linear-gradient(90deg, rgba(255,61,0,.15), rgba(255,140,40,.55), rgba(255,241,214,.35)); }
     /* A thin wave of light runs along the line itself; each step's ring lights up as the wave passes it */
-    .pipe-line { overflow: visible; --cycle: 4.8s; }
+    .pipe-line { overflow: visible; --cycle: 4.8s; clip-path: inset(-24px 0); }
+    .pipe-line.vertical { clip-path: inset(0 -24px); }   /* the streak is cut off at the circles, never past them */
     .pipe-line::after { content: ""; position: absolute; top: 0; height: 2px; width: 26%; left: -13%; border-radius: 2px;
       background: linear-gradient(90deg, rgba(255,226,190,0.000) 0%, rgba(255,226,190,0.091) 10%, rgba(255,226,190,0.328) 20%, rgba(255,226,190,0.622) 30%, rgba(255,226,190,0.859) 40%, rgba(255,226,190,0.950) 50%, rgba(255,226,190,0.859) 60%, rgba(255,226,190,0.622) 70%, rgba(255,226,190,0.328) 80%, rgba(255,226,190,0.091) 90%, rgba(255,226,190,0.000) 100%);
       /* The glow follows the streak's own transparency (a box-shadow would draw a hard-edged bar) */
@@ -1480,7 +1481,21 @@
     const CYCLE = 4.8;
     function phasePipeline() {
       const line = document.querySelector(".pipe-line"); if (!line) return;
-      const L = line.getBoundingClientRect(), vertical = L.height > L.width;
+      // The line runs exactly from the centre of the first circle to the centre of the last, so the streak
+      // starts under circle 1 and ends under circle 4 whatever height the cards end up with.
+      const pipe = line.parentElement, nums = [...document.querySelectorAll(".stage-num")];
+      const vertical = getComputedStyle(pipe).gridTemplateColumns.trim().split(/\s+/).length === 1;
+      line.style.top = line.style.bottom = line.style.left = line.style.right = "";
+      if (nums.length > 1) {
+        // Layout offsets, not screen rectangles, so an entrance animation's scale can't skew the result
+        const cy = n => n.offsetParent.offsetTop + n.offsetTop + n.offsetHeight / 2;
+        const cx = n => n.offsetParent.offsetLeft + n.offsetLeft + n.offsetWidth / 2;
+        const a = nums[0], z = nums[nums.length - 1];
+        if (vertical) { line.style.top = `${cy(a)}px`; line.style.bottom = `${pipe.clientHeight - cy(z)}px`; }
+        else { line.style.left = `${cx(a)}px`; line.style.right = `${pipe.clientWidth - cx(z)}px`; }
+      }
+      line.classList.toggle("vertical", vertical);
+      const L = line.getBoundingClientRect();
       const start = vertical ? L.top : L.left, len = (vertical ? L.height : L.width) || 1;
       document.querySelectorAll(".stage-num").forEach(n => {
         const r = n.getBoundingClientRect();
