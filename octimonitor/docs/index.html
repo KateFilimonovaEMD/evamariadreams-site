@@ -57,12 +57,13 @@
     .wrap { width: min(1200px, calc(100% - 48px)); margin: 0 auto; }
     .topbar { position: sticky; top: 10px; z-index: 30; margin-top: 10px; }
     .bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 10px 10px 10px 18px; border-radius: 999px; }
-    .mark { display: flex; align-items: center; gap: 12px; font-family: var(--display); font-weight: 700; font-size: 17px; letter-spacing: -0.01em; font-variation-settings: var(--wide); text-decoration: none; }
+    .mark { display: flex; align-items: center; gap: 12px; white-space: nowrap; flex: none; font-family: var(--display); font-weight: 700; font-size: 17px; letter-spacing: -0.01em; font-variation-settings: var(--wide); text-decoration: none; }
     .mark-glyph { width: 28px; height: 28px; border-radius: 9px; background: var(--heat); position: relative; flex: none; }
     .mark-glyph::after { content: ""; position: absolute; inset: 7px; border-radius: 4px; background: var(--black); }
-    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .brand { display: flex; align-items: center; gap: 12px; min-width: 0; flex: none; }
     .page-name { font-size: 14px; font-weight: 500; color: var(--ash); padding-left: 12px; border-left: 1px solid var(--line); cursor: default; }
-    .ghost { color: var(--white); border-radius: 999px; padding: 8px 16px; font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap; transition: transform .35s var(--spring), background .25s ease; }
+    /* Shrinks with an ellipsis rather than sliding over the logo when its label is long (e.g. a translated page) */
+    .ghost { color: var(--white); border-radius: 999px; padding: 8px 16px; font-size: 14px; font-weight: 500; text-decoration: none; white-space: nowrap; min-width: 0; flex: 0 1 auto; overflow: hidden; text-overflow: ellipsis; transition: transform .35s var(--spring), background .25s ease; }
     .ghost:hover { background: linear-gradient(180deg, rgba(255,247,238,.13), rgba(255,247,238,.04)); }
     .ghost:active { transform: scale(.96); }
 
@@ -216,7 +217,7 @@
           <div class="table-wrap"><table>
             <thead><tr><th>App</th><th>Scene means</th><th>Example names</th></tr></thead>
             <tbody>
-              <tr><td>Opal Caress</td><td>The material being played with</td><td>Slime, Spark, Lightning</td></tr>
+              <tr><td>A creative toy</td><td>The material or brush in use</td><td>Water, Sand, Smoke</td></tr>
               <tr><td>A sculpting app</td><td>The active tool</td><td>Sculpt, Smooth, Paint</td></tr>
               <tr><td>A game</td><td>The level or screen</td><td>Menu, Level 3, Boss fight</td></tr>
             </tbody>
@@ -227,7 +228,7 @@
 
         <section id="measure">
           <h2>What the app measures</h2>
-          <p>OctiMonitor is a small Swift package for any iOS app that draws with Metal. The app calls it in three places in its renderer; everything else happens inside the package. The example is how Opal Caress does it.</p>
+          <p>OctiMonitor is a small Swift package for any iOS app that draws with Metal. The app calls it in three places in its renderer; everything else happens inside the package. The example is a typical MetalKit renderer.</p>
 <pre><code><span class="c">// When the GPU finishes the frame: the GPU's own timestamps</span>
 buffer.addCompletedHandler { b <span class="k">in</span>
     OctiMonitor.<span class="k">recordGPU</span>(start: b.gpuStartTime, end: b.gpuEndTime, scene: scene)
@@ -258,7 +259,7 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
 
           <div class="why">
             <p><b>Why the moment of presentation.</b> A frame can be drawn on time and still reach the screen late, for example when the system compositor is busy. People see presentation, and Apple's hitch metrics are based on it. Draw-call intervals are only the fallback.</p>
-            <p><b>Why GPU time per scene.</b> Frame time tells you <em>that</em> something is slow. GPU time split by scene tells you <em>where</em>. In Opal Caress every material is a different shader, so it points straight at the shader to optimize.</p>
+            <p><b>Why GPU time per scene.</b> Frame time tells you <em>that</em> something is slow. GPU time split by scene tells you <em>where</em>. When each scene draws with its own shaders, it points straight at the shader to optimize.</p>
             <p><b>Why the target rate is capped by the display.</b> An app can ask for 120 fps on a phone whose screen only does 60. Judged against 120, every perfectly normal 16.7 ms frame would count as late. Capping by the screen's real maximum makes "late" mean late for this particular phone.</p>
             <p><b>Why <code>phys_footprint</code>.</b> It is the number iOS itself uses to decide when to close an app for using too much memory, so it is the one that matters, not the virtual size.</p>
           </div>
@@ -313,9 +314,9 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
 
         <section id="report">
           <h2>The report</h2>
-          <p>Every 30 seconds by default the app sends one row (Opal Caress uses 10 seconds in debug builds). If the phone is offline, the request times out or the server is busy (408, 429 or 5xx), up to 20 rows wait and go out with the next successful request; the oldest are dropped first. Any other 4xx means the server rejected the rows themselves, so they are dropped instead of blocking newer reports. When the app goes to the background, waiting rows, and a batch still on its way, are saved to disk. The file stays until the server confirms them, even across launches, so closing the app while offline doesn't lose them, and a delivered batch is never sent twice. Reports whose window ended more than a day ago are discarded rather than sent late. Each report says how many earlier ones were lost, and when its window ended, so late reports still land at the right time on the charts.</p>
+          <p>Every 30 seconds by default the app sends one row (an app can shorten it, for example to 10 seconds in debug builds). If the phone is offline, the request times out or the server is busy (408, 429 or 5xx), up to 20 rows wait and go out with the next successful request; the oldest are dropped first. Any other 4xx means the server rejected the rows themselves, so they are dropped instead of blocking newer reports. When the app goes to the background, waiting rows, and a batch still on its way, are saved to disk. The file stays until the server confirms them, even across launches, so closing the app while offline doesn't lose them, and a delivered batch is never sent twice. Reports whose window ended more than a day ago are discarded rather than sent late. Each report says how many earlier ones were lost, and when its window ended, so late reports still land at the right time on the charts.</p>
 <pre><code>{
-  <span class="k">"app"</span>: "com.evamariadreams.opalcaress",
+  <span class="k">"app"</span>: "com.example.game",
   <span class="k">"kind"</span>: "perf",
   <span class="k">"session"</span>: "<span class="c">random id made at launch, never stored on the phone</span>",
   <span class="k">"device"</span>: "iPhone14,7",
@@ -329,7 +330,7 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
     <span class="k">"thermal_now"</span>: "fair", <span class="k">"thermal_worst"</span>: "serious",
     <span class="k">"memory_mb_peak"</span>: 412.5, <span class="k">"reports_dropped"</span>: 0,
     <span class="k">"scenes"</span>: [{
-      <span class="k">"scene"</span>: "Spark", <span class="k">"target_fps"</span>: 60,
+      <span class="k">"scene"</span>: "Level 3", <span class="k">"target_fps"</span>: 60,
       <span class="k">"frames"</span>: 1780, <span class="k">"seconds"</span>: 29.87, <span class="k">"fps"</span>: 59.59,
       <span class="k">"frame_ms"</span>: { "p50": 16.6, "p95": 16.9, "p99": 16.98, "max": 51.2, "n": 1780 },
       <span class="k">"frame_hist"</span>: [[65, 140], [66, 1180], [67, 450], [133, 8], [200, 2]],
