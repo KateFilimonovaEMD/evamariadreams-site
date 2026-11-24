@@ -300,6 +300,13 @@
     tr.sample td { color: var(--ash); font-size: 13px; }
     .inspect-link { color: var(--amber); text-decoration: none; white-space: nowrap; }
     .scope-note { margin: 12px 0 0; font-size: 13px; color: var(--ash); }
+    /* What the timeline covers when a scene or phone is selected, with a switch back to everything */
+    .scope-line { margin: -6px 0 12px; font-size: 13px; color: var(--ash); }
+    .evidence { margin: 12px 0 0; font-size: 13px; color: var(--ash); }
+    .evidence.thin b { color: var(--amber); font-weight: 600; }
+    .scope-line b { color: var(--white); font-weight: 600; }
+    .linkish { font: inherit; color: var(--amber); background: none; border: 0; padding: 0; cursor: pointer; text-decoration: underline; text-decoration-color: rgba(255,176,32,.4); text-underline-offset: 3px; }
+    .linkish:hover { text-decoration-color: var(--amber); }
     .chart-note { margin: 18px 0 6px; padding: 18px 20px; border-radius: 16px; background: rgba(255,247,238,.035); box-shadow: inset 0 0 0 1px rgba(255,247,238,.06); color: var(--ash); font-size: 15px; }
     .hint { font-size: 13px; color: var(--ash-2); margin-top: 8px; }
 
@@ -349,6 +356,7 @@
     .mx-bar i { position: absolute; inset: 0 auto 0 0; border-radius: inherit; background: linear-gradient(90deg, #ffd08a, #ff8a2a 60%, #ff3d00); }
     .mx-meta { display: flex; justify-content: space-between; gap: 8px; margin-top: 7px; font-size: 12px; color: var(--ash); font-variant-numeric: tabular-nums; }
     .mx-over { color: #ff7a4a; font-weight: 700; }
+    .mx-thin { color: var(--amber); }
     .mx-name { display: block; font-size: 13px; font-weight: 600; color: var(--white); margin-bottom: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .matrix.compact { gap: 8px; }
     .matrix.compact .mx-cell { padding: 10px 12px; }
@@ -374,6 +382,8 @@
     }
     .check.sev-critical { --glow: rgba(255, 61, 0, 0.22); --period: 2.2s; box-shadow: inset 0 0 0 1px rgba(255, 61, 0, 0.18), inset 0 1px 0 rgba(255,247,238,.06); }
     .check.sev-warning { --glow: rgba(255, 176, 32, 0.14); --period: 3.6s; }
+    .check-basis { margin-top: 6px; font-size: 12px; color: var(--ash-2); }
+    .check.sev-unknown .check-title { color: var(--ash); }
     .check { position: relative; }
     .check.sev-critical .sev::before, .check.sev-warning .sev::before { animation: ring var(--period) ease-in-out var(--phase, 0s) infinite; }
     .sev.pulsing::before { animation: ring var(--period) ease-in-out infinite; }
@@ -609,7 +619,7 @@
       <button class="report-mobile glass" id="exportMobile" type="button" disabled>Open report</button>
     </div>
 
-    <div class="notice glass err" id="error" hidden><b>The data service isn't responding.</b> <span id="errorText"></span> The page retries every 10 seconds.</div>
+    <div class="notice glass err" id="error" hidden><b id="errorTitle">The data service isn't responding.</b> <span id="errorText"></span> The page retries every 10 seconds.</div>
     <div class="notice glass" id="empty" hidden><b>No reports in this time range yet.</b> Open one of the apps for a minute: the first numbers arrive within 30 seconds.</div>
 
     <main id="content" hidden>
@@ -649,6 +659,7 @@
             <div>
               <h2>Over time</h2>
               <p class="note" id="timelineNote">p95 frame time across every session.</p>
+              <p class="scope-line" id="timelineScope" hidden></p>
             </div>
             <div class="seg small glass" role="group" aria-label="Metric" id="metric"><span class="seg-thumb" aria-hidden="true"></span>
               <button type="button" data-metric="frame_p95" aria-pressed="true">Frame p95</button>
@@ -689,7 +700,7 @@
       <section class="grid">
         <article class="panel glass" id="pHeat">
           <h2>Heat over a session</h2>
-          <p class="note">Sessions lined up by minutes of use since launch. When stutter rises together with the share of sessions in serious heat, thermal throttling is a likely cause.</p>
+          <p class="note">Sessions lined up by minutes of use since launch. If stutter rises together with the share of sessions in serious heat, that may point to thermal throttling. It is a correlation, not proof.</p>
           <div class="heat-early" id="heatEarly" hidden>
             <div class="early-track" aria-hidden="true"><i id="earlyFill"></i></div>
             <p class="early-text" id="earlyText"></p>
@@ -762,7 +773,10 @@
     const WHITE = "#fff7ee", ASH = "#9a928a", ASH2 = "#6f6862", LINE = "#2b2622", EMBER = "#ff5a1f", FIRE = "#ff3d00", AMBER = "#ffb020";
     const HEAT_RAMP = ["#2a1409", "#5c1d06", "#a3300a", "#e2470f", "#ff6a1f", "#ff9a2a", "#ffc65a", "#fff1d6"];
     const THERMAL = { nominal: ["Cool", WHITE], fair: ["Warm", AMBER], serious: ["Hot", EMBER], critical: ["Critical", FIRE] };
-    const SEV = { critical: ["Critical", FIRE], warning: ["Warning", AMBER], ok: ["Passing", WHITE] };
+    // Health check statuses. Critical and Warning are measured issues with a sample big enough to
+    // trust; Potential is a signal on thin or partial data, or a correlation; Not evaluated means
+    // the telemetry needed for the check isn't there.
+    const SEV = { critical: ["Critical", FIRE], warning: ["Warning", AMBER], potential: ["Potential", AMBER], unknown: ["Not evaluated", ASH2], ok: ["No issues", WHITE] };
     const DEVICES = {
       "iPhone12,1": "iPhone 11", "iPhone12,3": "iPhone 11 Pro", "iPhone12,5": "iPhone 11 Pro Max", "iPhone12,8": "iPhone SE 2",
       "iPhone13,1": "iPhone 12 mini", "iPhone13,2": "iPhone 12", "iPhone13,3": "iPhone 12 Pro", "iPhone13,4": "iPhone 12 Pro Max",
@@ -798,9 +812,15 @@
     function syncTargets(d) {
       const o = d.overall || {}, fps = targetOf(o), b = 1000 / fps;
       METRICS.frame_p95.ref = [{ y: +b.toFixed(1), label: `${fps} fps budget` }];
-      METRICS.frame_p95.note = `p95 frame time across every session. The dashed line is the ${fps} fps budget of ${fmt(b)} ms: above it, people start to feel stutter.${o.mixed_targets ? " Sessions here run at different target rates; scenes and phones are each judged against their own." : ""}`;
+      METRICS.frame_p95.note = `p95 frame time across every session. The dashed line is the ${fps} fps budget of ${fmt(b)} ms: above it, people start to feel stutter.`;
       METRICS.fps.ref = [{ y: fps, label: `${fps} fps target` }];
       METRICS.fps.note = `Average frame rate across every session. The dashed line is the ${fps} fps target.`;
+      if (o.mixed_targets) {
+        const rates = (d.targets || []).map(t => t.target_fps).sort((a, b) => a - b);
+        const list = rates.length ? rates.join(" and ") + " fps" : "different rates";
+        METRICS.frame_p95.note = `p95 frame time. Sessions here run at ${list}, so each rate has its own line and its own dashed budget; one line against one budget would mislead.`;
+        METRICS.fps.note = `Average frame rate. Sessions here run at ${list}, so each rate has its own line and its own dashed target.`;
+      }
     }
 
     const params = new URLSearchParams(location.search);
@@ -897,15 +917,57 @@
     const fade = (rgb, a0) => grad([0, 0, 0, 1], Array.from({ length: 9 }, (_, i) => [i / 8, `rgba(${rgb},${(a0 * Math.pow(1 - i / 8, 2.2)).toFixed(3)})`]));
 
     // ---------- data ----------
-    async function load() {
+    async function rpc(body) {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/octimonitor_overview`, {
         method: "POST",
         headers: { "apikey": PUBLIC_KEY, "Content-Type": "application/json" },
-        body: JSON.stringify({ p_hours: state.hours, p_app: state.app || null })
+        body: JSON.stringify(body)
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}.`);
+      if (!res.ok) {
+        const e = new Error(`HTTP ${res.status}.`); e.status = res.status;
+        try { e.code = (await res.json()).code; } catch (_) {}
+        throw e;
+      }
       return res.json();
     }
+    // The timeline follows the selected scene and/or phone (servers with migration 003)
+    function scopeParams() {
+      // Only once the server has said it understands them (the first answer tells), so a server
+      // without migration 003 never sees parameters it doesn't know
+      if (state.legacy !== false || state.timelineAll) return {};
+      const { scene, device } = state.sel, p = {};
+      if (scene) { const m = state.sceneMap && state.sceneMap.get(scene); p.p_scene = m ? m.scene : scene; if (m && m.app) p.p_scene_app = m.app; }
+      if (device) p.p_device = device;
+      return p;
+    }
+    async function load() {
+      const plain = { p_hours: state.hours, p_app: state.app || null };
+      const body = Object.assign({}, plain, scopeParams());
+      try {
+        return normalize(await rpc(body));
+      } catch (e) {
+        // A server that hasn't run migration 003 doesn't know the scope parameters: ask without them
+        if (Object.keys(body).length > 2 && (e.status === 404 || e.code === "PGRST202")) { state.legacy = true; return normalize(await rpc(plain)); }
+        throw e;
+      }
+    }
+    // Scenes are keyed by app and name. With several apps in view the app goes into the label, so
+    // two scenes called "Menu" stay two rows everywhere on the page.
+    function normalize(d) {
+      state.legacy = d.api !== 3;
+      const rows = [...(d.scenes || []), ...(d.device_scene || [])];
+      d.multiApp = new Set(rows.map(r => r.app).filter(Boolean)).size > 1;
+      state.sceneMap = new Map();
+      for (const r of rows) {
+        r.scene_name = r.scene;
+        if (d.multiApp) r.scene = `${r.scene} (${appName(r.app)})`;
+        state.sceneMap.set(r.scene, { scene: r.scene_name, app: r.app || null });
+      }
+      if (d.multiApp) for (const r of d.recent || []) if (r.scene != null && r.app) r.scene = `${r.scene} (${appName(r.app)})`;
+      return d;
+    }
+    const kfmt = n => n >= 1000 ? `${fmt(n / 1000, n >= 10000 ? 0 : 1)}k` : int(n);
+    const plural = (n, word) => `${int(n)} ${word}${n === 1 ? "" : "s"}`;
 
     async function loadApp(app) {
       const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/octimonitor_overview`, {
@@ -931,7 +993,7 @@
         return `<button type="button" class="app-card" data-app="${esc(a)}">
           <div class="app-card-head"><span class="app-card-name">${esc(appName(a))}</span><span class="app-card-live" style="--c:${live ? "var(--online)" : ASH2}">${live ? `${int(t.live_sessions)} active` : "Idle"}</span></div>
           <div class="app-card-stats"><div><span>FPS</span><b>${fmt(o.fps)}</b></div><div><span>Frame p95</span><b>${fmt(o.frame_p95)}</b></div><div><span>Hitch ms/s</span><b>${fmt(o.hitch)}</b></div></div>
-          <div class="app-card-foot"><span>${int(t.sessions || 0)} session${t.sessions === 1 ? "" : "s"} on ${int(t.devices || 0)} device${t.devices === 1 ? "" : "s"}</span>${(t.reports || 0) > 0 ? heatTag(v[0], v[1]) : `<span class="muted">No data in range</span>`}</div>
+          <div class="app-card-foot"><span>${plural(t.sessions || 0, "session")} on ${plural(t.devices || 0, "phone model")}</span>${(t.reports || 0) > 0 ? heatTag(v[0], v[1]) : `<span class="muted">No data in range</span>`}</div>
         </button>`;
       }).join("");
       $("apps").querySelectorAll(".app-card").forEach(b => b.addEventListener("click", () => {
@@ -951,11 +1013,18 @@
         $("error").hidden = true;
         render(state.data);
         if (manual) toast("Refreshed");
+        // The scene names in a URL only resolve to an app once the data is here: ask again once if needed
+        const want = scopeParams(), got = data.scope || {};
+        const differs = (want.p_scene || null) !== (got.scene || null) || (want.p_scene_app || null) !== (got.scene_app || null) || (want.p_device || null) !== (got.device || null);
+        if (!state.legacy && differs && !refresh.again) { refresh.again = true; setTimeout(() => refresh(), 0); } else refresh.again = false;
       } catch (e) {
         if (seq !== requestSeq) return;
         document.body.classList.remove("loading");
         $("error").hidden = false;
-        $("errorText").textContent = e.message || "";
+        // 57014: the database stopped a query that ran past its time limit
+        const slow = e.code === "57014";
+        $("errorTitle").textContent = slow ? "This range is too big to add up in time." : "The data service isn't responding.";
+        $("errorText").textContent = slow ? "Pick a shorter range or a single app." : e.message || "";
       }
       tick();
     }
@@ -996,7 +1065,7 @@
 
       tween($("kLive"), t.live_sessions, 0);
       tween($("kSessions"), t.sessions, 0);
-      $("kDevices").textContent = `on ${int(t.devices)} device${t.devices === 1 ? "" : "s"}`;
+      $("kDevices").textContent = `on ${plural(t.devices, "phone model")}`;
       tween($("kFrames"), o.frames, 0);
       const minutes = (o.seconds || 0) / 60, m = Math.max(1, Math.round(minutes));
       $("kPlay").textContent = minutes >= 90 ? `${fmt(minutes / 60, 1)} hours of use` : `${m} minute${m === 1 ? "" : "s"} of use`;
@@ -1041,6 +1110,7 @@
       parts.push(q.screen_timing_share >= 0.995 ? "Frame timing from the screen" : q.screen_timing_share > 0 ? `Frame timing from the screen on ${pct(q.screen_timing_share)} of frames, from draw calls on the rest` : "Frame timing from draw calls");
       parts.push(q.histogram_share >= 0.995 ? "percentiles from every frame" : `percentiles from every frame on ${pct(q.histogram_share)} of frames, estimated on the rest`);
       parts.push(q.gpu_measured_share > 0 ? `GPU measured on ${pct(q.gpu_measured_share)} of frames` : "no GPU timing");
+      if (q.debug_share > 0) parts.push(q.debug_share >= 0.995 ? "all from debug builds" : `${pct(q.debug_share)} of frames from debug builds`);
       if (q.reports_dropped > 0) parts.push(`${int(q.reports_dropped)} report${q.reports_dropped === 1 ? "" : "s"} lost on phones`);
       el.textContent = parts.map(x => x[0].toUpperCase() + x.slice(1)).join(". ") + ".";
       el.hidden = false;
@@ -1069,34 +1139,68 @@
         : `${heatTag(v[0], v[1])}&nbsp; ${h < 5 ? "Late frames are rare enough that people don't notice." : h <= 10 ? "Occasional hitches people can notice." : "People feel the stutter."}`;
     }
 
-    // Health checks: simple, explainable rules.
+    // A verdict needs at least this many sessions and frames on each side
+    const MIN_SESSIONS = 3, MIN_FRAMES = 5000;
+    // Health checks: simple, explainable rules. A finding states what was measured, never a cause.
+    // Each one carries its basis (metric, threshold, sample) so it can be checked; thin or partial
+    // data turns a finding into "Potential", and missing telemetry into "Not evaluated" instead of
+    // passing silently.
+    const enoughData = r => r && (r.sessions == null || (r.sessions >= MIN_SESSIONS && (r.frames || 0) >= MIN_FRAMES));
+    const sampleText = r => [r.sessions != null && plural(r.sessions, "session"), r.frames != null && `${kfmt(r.frames)} frames`,
+      r.gpu_coverage != null && r.gpu_p95 > 0 && `GPU on ${fmt(r.gpu_coverage * 100, 0)}% of frames`].filter(Boolean).join(", ");
     function runChecks(d) {
-      const out = [], o = d.overall || {};
-      if (o.hitch > 10) out.push({ sev: "critical", title: `Stutter across all sessions: ${fmt(o.hitch)} ms/s`, detail: "Above the 10 ms/s line where people feel it.", go: "pTimeline", metric: "hitch" });
-      else if (o.hitch > 5) out.push({ sev: "warning", title: `Noticeable hitches: ${fmt(o.hitch)} ms/s`, detail: "Between 5 and 10 ms/s overall.", go: "pTimeline", metric: "hitch" });
-      if (o.frame_p95 > budgetOf(o) * 1.5) out.push({ sev: "warning", title: `Frame p95 is ${fmt(o.frame_p95)} ms`, detail: `More than 1.5× the ${fmt(budgetOf(o))} ms budget of ${targetOf(o)} fps.`, go: "pTimeline", metric: "frame_p95" });
+      const out = [], o = d.overall || {}, t = d.totals || {};
+      const all = { sessions: t.sessions, frames: o.frames };
+      const level = (r, sev) => enoughData(r) ? sev : "potential";
+      if (o.hitch > 10) out.push({ sev: level(all, "critical"), title: `Stutter across all sessions: ${fmt(o.hitch)} ms/s`, detail: "Above the 10 ms/s line where people feel it.", basis: `Hitch time against 10 ms/s. ${sampleText(all)}.`, go: "pTimeline", metric: "hitch" });
+      else if (o.hitch > 5) out.push({ sev: level(all, "warning"), title: `Noticeable hitches: ${fmt(o.hitch)} ms/s`, detail: "Between 5 and 10 ms/s overall.", basis: `Hitch time against 5 ms/s. ${sampleText(all)}.`, go: "pTimeline", metric: "hitch" });
+      // Frame time against the budget of the rate it was meant for: per rate when several are in view
+      const rateRows = o.mixed_targets && (d.targets || []).length ? d.targets : [Object.assign({}, o, { sessions: t.sessions })];
+      for (const r of rateRows) {
+        if (!(r.frame_p95 > budgetOf(r) * 1.5)) continue;
+        const at = o.mixed_targets ? ` at ${targetOf(r)} fps` : "";
+        out.push({ sev: level(r, "warning"), title: `Frame p95${at} is ${fmt(r.frame_p95)} ms`, detail: `More than 1.5× the ${fmt(budgetOf(r))} ms budget of ${targetOf(r)} fps.`, basis: `Frame time p95 against 1.5× its budget. ${sampleText(r)}.`, go: "pTimeline", metric: "frame_p95" });
+      }
+      const unmeasured = [];
       for (const s of d.scenes || []) {
-        if (!(s.gpu_p95 > 0)) continue;
+        if (!(s.gpu_p95 > 0)) { unmeasured.push(s.scene); continue; }
         const b = budgetOf(s), fps = targetOf(s);
-        if (s.gpu_p95 > b) out.push({ sev: "critical", title: `${s.scene} misses the GPU budget`, detail: `GPU p95 ${fmt(s.gpu_p95)} ms, over the whole ${fmt(b)} ms frame at ${fps} fps.`, scene: s.scene });
-        else if (s.gpu_p95 > b * 0.75) out.push({ sev: "warning", title: `${s.scene} is close to the GPU budget`, detail: `GPU p95 ${fmt(s.gpu_p95)} ms, ${fmt(s.gpu_p95 / b * 100, 0)}% of the ${fps} fps frame.`, scene: s.scene });
+        const partial = s.gpu_coverage != null && s.gpu_coverage < 0.8;
+        const sev = sv => partial ? "potential" : level(s, sv);
+        const basis = `GPU time p95 against the ${fmt(b)} ms frame at ${fps} fps. ${sampleText(s)}.${partial ? " GPU timing is missing for part of the frames, so the p95 may not represent the rest." : ""}`;
+        if (s.gpu_p95 > b) out.push({ sev: sev("critical"), title: `${s.scene}: GPU p95 exceeds its frame budget`, detail: `GPU p95 ${fmt(s.gpu_p95)} ms, more than the whole ${fmt(b)} ms frame at ${fps} fps.`, basis, scene: s.scene });
+        else if (s.gpu_p95 > b * 0.75) out.push({ sev: sev("warning"), title: `${s.scene} is close to the GPU budget`, detail: `GPU p95 ${fmt(s.gpu_p95)} ms, ${fmt(s.gpu_p95 / b * 100, 0)}% of the ${fps} fps frame.`, basis, scene: s.scene });
       }
       for (const c of d.device_scene || []) {
-        if (c.frame_p95 > budgetOf(c) * 1.5 && (c.frames || 0) > 300) out.push({ sev: "warning", title: `${c.scene} on ${deviceName(c.device)}`, detail: `Frame p95 ${fmt(c.frame_p95)} ms on this phone, over 1.5× its ${fmt(budgetOf(c))} ms frame.`, scene: c.scene, device: c.device });
+        if (c.frame_p95 > budgetOf(c) * 1.5 && (c.frames || 0) > 300) out.push({ sev: level(c, "warning"), title: `${c.scene} on ${deviceName(c.device)}`, detail: `Frame p95 ${fmt(c.frame_p95)} ms on this phone model, over 1.5× its ${fmt(budgetOf(c))} ms frame.`, basis: `Frame time p95 against 1.5× its budget. ${sampleText(c)}.`, scene: c.scene, device: c.device });
       }
       const share = r => r.hot_sessions_share != null ? r.hot_sessions_share : r.hot_share;
       const hot = (d.session_minutes || []).filter(r => share(r) >= 0.3 && r.sessions >= 2);
-      if (hot.length) out.push({ sev: "warning", title: "Phones heat up during use", detail: `From minute ${hot[0].minute + 1}, ${fmt(share(hot[0]) * 100, 0)}% of sessions reach serious or critical heat.`, go: "pHeat" });
+      if (hot.length) out.push({ sev: hot[0].sessions >= MIN_SESSIONS ? "warning" : "potential", title: "Phones reach serious heat during use", detail: `From minute ${hot[0].minute + 1}, ${fmt(share(hot[0]) * 100, 0)}% of sessions report serious or critical heat. This may indicate thermal throttling; compare hitch time over the same minutes.`, basis: `Thermal state reported by iOS, ${plural(hot[0].sessions, "session")} in that minute.`, go: "pHeat" });
       for (const [prev, cur] of latestPairs(d.versions || [])) {
         const cmp = compareBuilds(d, prev, cur);
         if (!cmp.enough) continue;   // no verdict on a handful of sessions
         const worse = (a, b) => a != null && b != null && b > a * 1.1;
         const where = cmp.devices.length === 1 ? `on ${deviceName(cmp.devices[0])}` : `on the ${cmp.devices.length} phone models both ran on`;
-        if (worse(cmp.a.hitch, cmp.b.hitch)) out.push({ sev: "warning", title: `Regression in ${cur.version}`, detail: `Hitch time ${fmt(cmp.a.hitch)} → ${fmt(cmp.b.hitch)} ms/s vs ${prev.version}, ${where}.`, go: "pCompare" });
-        else if (worse(cmp.a.frame_p95, cmp.b.frame_p95)) out.push({ sev: "warning", title: `Regression in ${cur.version}`, detail: `Frame p95 ${fmt(cmp.a.frame_p95)} → ${fmt(cmp.b.frame_p95)} ms vs ${prev.version}, ${where}.`, go: "pCompare" });
+        const name = v => `${v.version}${v.build === "debug" ? " (debug)" : ""}`;
+        const basis = `${name(prev)}: ${plural(cmp.a.sessions, "session")}, ${kfmt(cmp.a.frames)} frames. ${name(cur)}: ${plural(cmp.b.sessions, "session")}, ${kfmt(cmp.b.frames)} frames. Verify on matched builds before calling it.`;
+        if (worse(cmp.a.hitch, cmp.b.hitch)) out.push({ sev: "potential", title: `Possible regression in ${name(cur)}`, detail: `Hitch time ${fmt(cmp.a.hitch)} → ${fmt(cmp.b.hitch)} ms/s vs ${name(prev)}, ${where}.`, basis, go: "pCompare" });
+        else if (worse(cmp.a.frame_p95, cmp.b.frame_p95)) out.push({ sev: "potential", title: `Possible regression in ${name(cur)}`, detail: `Frame p95 ${fmt(cmp.a.frame_p95)} → ${fmt(cmp.b.frame_p95)} ms vs ${name(prev)}, ${where}.`, basis, go: "pCompare" });
       }
-      const order = { critical: 0, warning: 1 };
-      return out.sort((a, b) => order[a.sev] - order[b.sev]).slice(0, 8);
+      // Missing telemetry is its own status, never a pass
+      const scenes = d.scenes || [];
+      if (scenes.length && unmeasured.length === scenes.length) out.push({ sev: "unknown", title: "GPU budget not evaluated", detail: "No GPU timing in this view, so no scene can be checked against the GPU budget.", basis: "Needs recordGPU from a Metal command buffer." });
+      else if (unmeasured.length) out.push({ sev: "unknown", title: `GPU not measured for ${plural(unmeasured.length, "scene")}`, detail: `${unmeasured.slice(0, 3).join(", ")}${unmeasured.length > 3 ? " and more" : ""}: these aren't checked against the GPU budget.`, basis: "Needs recordGPU from a Metal command buffer." });
+      const order = { critical: 0, warning: 1, potential: 2, unknown: 3 };
+      return out.sort((a, b) => order[a.sev] - order[b.sev]).slice(0, 10);
+    }
+    const CHECKED = "Checked: hitch time, frame time against each target's budget, GPU time per scene, heat and the previous build.";
+    function checkSummary(list) {
+      const n = k => list.filter(c => c.sev === k).length;
+      const crit = n("critical"), warn = n("warning"), pot = n("potential"), unk = n("unknown");
+      if (crit + warn + pot === 0) return [unk ? "No issues found, some checks not evaluated" : "No issues in measured data", unk ? ASH : WHITE, false];
+      const text = [crit && `${crit} critical`, warn && plural(warn, "warning"), pot && `${pot} potential`].filter(Boolean).join(", ");
+      return [text, crit ? FIRE : AMBER, crit + warn > 0];
     }
 
     function renderChecks(d) {
@@ -1104,15 +1208,16 @@
       const sig = JSON.stringify(list);
       if (sig === renderChecks.last) return;
       renderChecks.last = sig;
-      const crit = list.filter(c => c.sev === "critical").length, warn = list.length - crit;
+      const [text, color, pulsing] = checkSummary(list);
+      const crit = list.some(c => c.sev === "critical");
       const sum = $("checkSummary");
-      if (!list.length) { sum.textContent = "All checks passing"; sum.style.setProperty("--c", WHITE); }
-      else { sum.textContent = [crit && `${crit} critical`, warn && `${warn} warning${warn === 1 ? "" : "s"}`].filter(Boolean).join(", "); sum.style.setProperty("--c", crit ? FIRE : AMBER); }
-      sum.classList.toggle("pulsing", list.length > 0);
+      sum.textContent = text; sum.style.setProperty("--c", color);
+      sum.classList.toggle("pulsing", pulsing);
       sum.style.setProperty("--period", crit ? "2.2s" : "3.6s");
-      $("checks").innerHTML = list.length
-        ? list.map((c, i) => `<li class="check clickable sev-${c.sev}" tabindex="0" data-i="${i}"><span class="sev" style="--c:${SEV[c.sev][1]}">${SEV[c.sev][0]}</span><div><div class="check-title">${esc(c.title)}</div><div class="check-detail">${esc(c.detail)}</div></div><span class="check-go">Inspect</span></li>`).join("")
-        : `<li class="check"><span class="sev" style="--c:${WHITE}">Passing</span><div><div class="check-title">Within budget</div><div class="check-detail">Every scene fits the GPU budget, hitches are under 5 ms/s and no regression against the previous build.</div></div><span></span></li>`;
+      const issues = list.filter(c => c.sev !== "unknown").length;
+      const row = (c, i) => `<li class="check${c.sev === "unknown" ? "" : " clickable"} sev-${c.sev}"${c.sev === "unknown" ? "" : ` tabindex="0" data-i="${i}"`}><span class="sev" style="--c:${SEV[c.sev][1]}">${SEV[c.sev][0]}</span><div><div class="check-title">${esc(c.title)}</div><div class="check-detail">${esc(c.detail)}</div>${c.basis ? `<div class="check-basis">${esc(c.basis)}</div>` : ""}</div>${c.sev === "unknown" ? "<span></span>" : `<span class="check-go">Inspect</span>`}</li>`;
+      $("checks").innerHTML = (issues ? "" : `<li class="check"><span class="sev" style="--c:${WHITE}">No issues</span><div><div class="check-title">Nothing over its threshold in the measured data</div><div class="check-detail">${CHECKED}</div></div><span></span></li>`)
+        + list.map(row).join("");
       // Phase every pulse to the page clock so rebuilt rows continue the same rhythm instead of restarting
       const now = performance.now() / 1000;
       $("checks").querySelectorAll(".check.sev-critical, .check.sev-warning").forEach(el => {
@@ -1137,34 +1242,65 @@
         ? dt.toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" })
         : dt.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
     }
+    const selectionName = () => { const { scene, device } = state.sel; return [scene, device && deviceName(device)].filter(Boolean).join(" on "); };
+
+    // Say what the timeline covers: the selection it follows, or everything in view
+    function renderTimelineScope() {
+      const el = $("timelineScope"), d = state.data;
+      const has = state.sel.scene || state.sel.device;
+      el.hidden = state.legacy || !has;
+      if (el.hidden) return;
+      const following = !state.timelineAll && d.scope && (d.scope.scene || d.scope.device);
+      el.innerHTML = following
+        ? `Following <b>${esc(selectionName())}</b>. <button type="button" class="linkish" data-tl="all">Show everything in view</button>`
+        : `Showing everything in view. <button type="button" class="linkish" data-tl="follow">Follow ${esc(selectionName())}</button>`;
+      el.querySelector("[data-tl]").addEventListener("click", e => { state.timelineAll = e.currentTarget.dataset.tl === "all"; refresh(); });
+    }
 
     function renderTimeline() {
       const c = chart("cTimeline"); if (!c) return;
-      const rows = state.data.timeline || [];
+      const d = state.data;
+      const rows = d.timeline || [];
+      renderTimelineScope();
       const hasTiming = rows.some(r => [r.fps, r.hitch, r.frame_p95].some(v => v != null));
-      $("zoomHint").hidden = rows.length < 3;   // nothing to zoom into with one or two points
-      $("zoomHint").textContent = rows.length > Math.max(24, Math.round(($("cTimeline").clientWidth || 600) / 9))
-        ? "Showing the most recent stretch. Scroll or pinch on the chart to zoom out, drag to see earlier."
-        : "Scroll or pinch on the chart to zoom, drag to pan.";
-      if (chartNote("cTimeline", hasTiming ? null : "No frame timing in this range yet. Pick a longer range, or open the app to send a report.")) {
+      const scoped = !state.legacy && !state.timelineAll && d.scope && (d.scope.scene || d.scope.device);
+      if (chartNote("cTimeline", hasTiming ? null : scoped ? `No frame timing for ${selectionName()} in this range.` : "No frame timing in this range yet. Pick a longer range, or open the app to send a report.")) {
         $("timelineNote").textContent = METRICS[state.metric].note;
+        $("zoomHint").hidden = true;
         return;
       }
       const m = METRICS[state.metric];
-      const x = rows.map(r => timeLabel(r.t));
-      // A line needs two windows. With one, show the point with its value and say why there's no line yet.
+      const stepMs = (d.timeline_step_s || (state.hours <= 1 ? 60 : state.hours <= 24 ? 600 : 3600)) * 1000;
+      const ts = r => new Date(r.t).getTime();
+      // With several target rates in view, frame time and fps get one line per rate, each against its
+      // own budget; hitch time is lateness against each frame's own slot, so it stays one line.
+      const tt = d.timeline_targets || [];
+      const rates = [...new Set(tt.map(r => r.target_fps))].sort((a, b) => a - b);
+      const split = state.metric !== "hitch" && rates.length > 1;
+      const groups = split ? rates.map(fps => ({ fps, rows: tt.filter(r => r.target_fps === fps) })) : [{ fps: null, rows }];
+      // Real time on the x axis. Where buckets are missing the line breaks, so a two-day pause never
+      // looks like the next ten minutes.
+      let gaps = 0;
+      const points = list => {
+        const out = [];
+        list.forEach((r, i) => {
+          if (i && ts(r) - ts(list[i - 1]) > stepMs * 1.5) { out.push({ value: [ts(list[i - 1]) + stepMs, null] }); gaps++; }
+          out.push({ value: [ts(r), r[state.metric]], row: r });
+        });
+        return out;
+      };
       const single = rows.length === 1;
-      $("timelineNote").textContent = single
-        ? `${m.note} Only one reporting window in this range so far (${x[0]}), so there is a single point; the line appears as more reports arrive.`
-        : m.note;
+      const refs = (split
+        ? rates.map(fps => state.metric === "fps" ? { y: fps, label: `${fps} fps target` } : { y: +(1000 / fps).toFixed(1), label: `${fps} fps budget` })
+        : m.ref).slice().sort((p, q) => p.y - q.y);
       // Same headroom rule as the axis, used to decide whether threshold labels have room of their own
-      const values = rows.map(r => r[state.metric]).filter(v => v != null);
-      const rawTop = Math.max((values.length ? Math.max(...values) : 0) * 1.18, ...m.ref.map(r => r.y * 1.1), 1);
+      const values = groups.flatMap(g => g.rows.map(r => r[state.metric])).filter(v => v != null);
+      const rawTop = Math.max((values.length ? Math.max(...values) : 0) * 1.18, ...refs.map(r => r.y * 1.1), 1);
       // Round the top up to a whole tick so the last axis label never crowds the one below it (11 -> 15, 39 -> 40)
       const mag = Math.pow(10, Math.floor(Math.log10(rawTop / 5)));
       const step = [1, 2, 5, 10].map(k => k * mag).find(v => v >= rawTop / 5);
       const top = Math.ceil(rawTop / step) * step;
-      const close = m.ref.length > 1 && (m.ref[m.ref.length - 1].y - m.ref[0].y) / top < 0.08;
+      const close = refs.length > 1 && (refs[refs.length - 1].y - refs[0].y) / top < 0.08;
       // Labels sit at the right end of their line. If the newest value runs just above the line, the label
       // goes underneath instead, so it never covers the data.
       const lastVal = [...rows].reverse().map(r => r[state.metric]).find(v => v != null);
@@ -1173,38 +1309,58 @@
         return lastVal >= y ? "insideEndBottom" : "insideEndTop";
       };
       const refLines = close
-        ? m.ref.map((r, i) => ({ yAxis: r.y, label: i === m.ref.length - 1 ? { formatter: m.ref.map(q => `${q.label} ${q.y}`).join(" · "), position: labelSide(r.y, "insideEndTop") } : { show: false } }))
-        : m.ref.map((r, i) => ({ yAxis: r.y, label: { formatter: r.label, position: labelSide(r.y, m.ref.length > 1 && i === 0 ? "insideEndBottom" : "insideEndTop") } }));
-      const viewKey = `${state.app}|${state.hours}`;
+        ? refs.map((r, i) => ({ yAxis: r.y, label: i === refs.length - 1 ? { formatter: refs.map(q => `${q.label} ${q.y}`).join(", "), position: labelSide(r.y, "insideEndTop") } : { show: false } }))
+        : refs.map((r, i) => ({ yAxis: r.y, label: { formatter: r.label, position: labelSide(r.y, refs.length > 1 && i === 0 ? "insideEndBottom" : "insideEndTop") } }));
+      const span = rows.length ? ts(rows[rows.length - 1]) - ts(rows[0]) : 0;
+      const viewKey = `${state.app}|${state.hours}|${split}|${JSON.stringify(d.scope || {})}|${state.timelineAll}`;
       const prev = c.__view === viewKey && c.getOption && c.getOption();
-      // Long ranges (30 days of hourly points) open on the most recent stretch, sized to the screen,
-      // instead of squeezing hundreds of points into a scribble. Scroll or pinch shows the rest.
+      // Long ranges open on the most recent stretch, sized to the screen, instead of squeezing hundreds
+      // of points into a scribble. Scroll or pinch shows the rest.
       const fit = Math.max(24, Math.round(($("cTimeline").clientWidth || 600) / 9));
-      const initial = rows.length > fit ? { start: 100 - (fit / rows.length) * 100, end: 100 } : { start: 0, end: 100 };
+      const initial = span > fit * stepMs ? { start: 100 - (fit * stepMs / span) * 100, end: 100 } : { start: 0, end: 100 };
       const zoom = prev && prev.dataZoom && prev.dataZoom[0] ? { start: prev.dataZoom[0].start, end: prev.dataZoom[0].end } : initial;
+      $("zoomHint").hidden = rows.length < 3;   // nothing to zoom into with one or two points
+      $("zoomHint").textContent = initial.start > 0
+        ? "Showing the most recent stretch. Scroll or pinch on the chart to zoom out, drag to see earlier."
+        : "Scroll or pinch on the chart to zoom, drag to pan.";
       const dense = rows.length > 60;
       const rebuild = state.metricChanged || c.__view !== viewKey;
       c.__view = viewKey;
+      const colors = [[AMBER, "255,176,32"], [EMBER, "255,90,31"], [FIRE, "255,61,0"]];
+      const series = groups.map((g, gi) => {
+        const [col, rgb] = split ? colors[Math.min(gi, colors.length - 1)] : [EMBER, "255,90,31"];
+        return {
+          type: "line", name: g.fps ? `${g.fps} fps` : m.label, data: points(g.rows), connectNulls: false,
+          // Light smoothing that passes through every point, so spikes stay visible
+          smooth: dense ? 0.15 : 0.3, smoothMonotone: "x", showSymbol: g.rows.length < 30, symbolSize: single ? 14 : 9,
+          label: { show: single, position: "top", distance: 12, color: WHITE, fontWeight: 600, fontSize: 13, formatter: p => `${fmt(p.value[1], m.digits)} ${m.unit}` },
+          endLabel: { show: split, color: col, fontWeight: 600, fontSize: 12, formatter: () => `${g.fps} fps`, distance: 6 },
+          lineStyle: Object.assign({ width: 3, color: split ? col : grad([0, 0, 1, 0], [[0, AMBER], [1, EMBER]]), cap: "round", join: "round" }, glow(`rgba(${rgb},.55)`, 18)),
+          itemStyle: { color: "#fff1d6", borderColor: col, borderWidth: 3 },
+          emphasis: { scale: 1.6, itemStyle: { color: WHITE, borderColor: AMBER, borderWidth: 3, shadowBlur: 20, shadowColor: "rgba(255,176,32,.8)" } },
+          areaStyle: split ? undefined : { color: fade("255,90,31", 0.42) }
+        };
+      });
+      $("timelineNote").textContent = (single
+        ? `${m.note} Only one reporting window in this range so far (${timeLabel(rows[0].t)}), so there is a single point; the line appears as more reports arrive.`
+        : m.note) + (gaps ? " Breaks in the line are stretches with no reports." : "");
+      const t0 = rows.length ? ts(rows[0]) : Date.now(), t1 = rows.length ? ts(rows[rows.length - 1]) : Date.now();
       apply(c, Object.assign(base(), {
-        grid: { left: 4, right: 18, top: 18, bottom: 4, containLabel: true },
-        tooltip: tooltip({ trigger: "axis", axisPointer: { type: "line", lineStyle: { color: "rgba(255,247,238,.35)" } }, formatter: p => {
-          const r = rows[p[0].dataIndex];
-          return `<b>${esc(x[p[0].dataIndex])}</b><br>${m.label} <b>${fmt(r[state.metric], m.digits)} ${m.unit}</b><br><span style="color:${ASH}">Frame p95 ${fmt(r.frame_p95)} ms, ${fmt(r.fps)} fps, hitch ${fmt(r.hitch)} ms/s</span>`;
+        tooltip: tooltip({ trigger: "axis", axisPointer: { type: "line", lineStyle: { color: "rgba(255,247,238,.35)" } }, formatter: ps => {
+          const withRow = ps.filter(p => p.data && p.data.row);
+          if (!withRow.length) return "";
+          const r0 = withRow[0].data.row;
+          if (split) return `<b>${esc(timeLabel(r0.t))}</b><br>` + withRow.map(p => `${esc(p.seriesName)}: <b>${fmt(p.data.row[state.metric], m.digits)} ${m.unit}</b> <span style="color:${ASH}">${kfmt(p.data.row.frames || 0)} frames</span>`).join("<br>");
+          return `<b>${esc(timeLabel(r0.t))}</b><br>${m.label} <b>${fmt(r0[state.metric], m.digits)} ${m.unit}</b><br><span style="color:${ASH}">Frame p95 ${fmt(r0.frame_p95)} ms, ${fmt(r0.fps)} fps, hitch ${fmt(r0.hitch)} ms/s${r0.sessions != null ? `<br>${plural(r0.sessions, "session")}, ${kfmt(r0.frames || 0)} frames` : ""}</span>`;
         } }),
-        grid: { left: 4, right: 30, top: 22, bottom: 4, containLabel: true },
+        grid: { left: 4, right: split ? 58 : 30, top: 22, bottom: 4, containLabel: true },
         dataZoom: [{ type: "inside", start: zoom.start, end: zoom.end, zoomOnMouseWheel: true, moveOnMouseMove: true }],
-        xAxis: catAxis({ data: x, boundaryGap: single }),
+        xAxis: { type: "time", min: single ? t0 - stepMs * 3 : t0, max: single ? t1 + stepMs * 3 : t1,
+                 axisLine: { lineStyle: { color: LINE } }, axisTick: { show: false }, splitLine: { show: false },
+                 axisLabel: { color: ASH2, hideOverlap: true, formatter: v => timeLabel(v) } },
         // Headroom above the highest point so the line's glow never touches the top edge
         yAxis: valueAxis({ min: 0, max: top, interval: step, axisLabel: { color: ASH2, formatter: `{value} ${m.unit}` } }),
-        series: [{
-          type: "line", data: rows.map(r => r[state.metric]), smooth: dense ? 0.2 : 0.45, smoothMonotone: "x", showSymbol: rows.length < 30, symbolSize: single ? 14 : 9,
-          sampling: "lttb",
-          label: { show: single, position: "top", distance: 12, color: WHITE, fontWeight: 600, fontSize: 13, formatter: p => `${fmt(p.value, m.digits)} ${m.unit}` },
-          lineStyle: Object.assign({ width: 3, color: grad([0, 0, 1, 0], [[0, AMBER], [1, EMBER]]), cap: "round", join: "round" }, glow("rgba(255,90,31,.55)", 18)),
-          itemStyle: { color: "#fff1d6", borderColor: EMBER, borderWidth: 3 },
-          emphasis: { scale: 1.6, itemStyle: { color: WHITE, borderColor: AMBER, borderWidth: 3, shadowBlur: 20, shadowColor: "rgba(255,176,32,.8)" } },
-          areaStyle: { color: fade("255,90,31", 0.42) }
-        }, {
+        series: series.concat([{
           // Threshold lines live in their own series drawn above the data, and their labels sit on a small
           // dark pill, so the data line can never run through the text
           type: "line", data: [], z: 5, silent: true, tooltip: { show: false },
@@ -1212,7 +1368,7 @@
                       label: { color: ASH, position: "insideEndTop", fontSize: 11, distance: 4, padding: [3, 7], borderRadius: 6,
                                backgroundColor: "rgba(14, 12, 10, 0.88)" },
                       data: refLines }
-        }]
+        }])
       }), rebuild);
       state.metricChanged = false;
     }
@@ -1237,7 +1393,7 @@
         grid: { left: 4, right: 64, top: 26, bottom: 4, containLabel: true },
         tooltip: tooltip({ trigger: "item", formatter: p => {
           const r = rows[p.dataIndex];
-          return `<b>${esc(r.scene)}</b><br>GPU p95 <b>${fmt(r.gpu_p95)} ms</b>, p50 ${fmt(r.gpu_p50)} ms, ${fmt(r.gpu_p95 / budgetOf(r) * 100, 0)}% of the ${targetOf(r)} fps frame<br><span style="color:${ASH}">Frame p95 ${fmt(r.frame_p95)} ms, ${fmt(r.fps)} fps<br>Hitch ${fmt(r.hitch)} ms/s, ${int(r.dropped)} dropped</span><br><span style="color:${AMBER}">Click to inspect</span>`;
+          return `<b>${esc(r.scene)}</b><br>GPU p95 <b>${fmt(r.gpu_p95)} ms</b>, p50 ${fmt(r.gpu_p50)} ms, ${fmt(r.gpu_p95 / budgetOf(r) * 100, 0)}% of the ${targetOf(r)} fps frame<br><span style="color:${ASH}">Frame p95 ${fmt(r.frame_p95)} ms, ${fmt(r.fps)} fps<br>Hitch ${fmt(r.hitch)} ms/s, ${int(r.dropped)} dropped${r.sessions != null ? `<br>${plural(r.sessions, "session")}, ${kfmt(r.frames || 0)} frames${r.gpu_coverage != null ? `, GPU on ${fmt(r.gpu_coverage * 100, 0)}%` : ""}` : ""}</span><br><span style="color:${AMBER}">Click to inspect</span>`;
         } }),
         xAxis: valueAxis({ min: 0, max: v => Math.ceil(Math.max(v.max * 1.05, (mixed ? 100 : budget0) * 1.1)), splitNumber: innerWidth < 600 ? 3 : 4, axisLabel: lbl({ formatter: mixed ? "{value}%" : innerWidth < 600 ? "{value}" : "{value} ms" }) }),
         yAxis: catAxis({ data: rows.map(r => r.scene), triggerEvent: true, axisLine: { show: false },
@@ -1260,8 +1416,8 @@
       const sorted = scenes.slice().sort((a, b) => (b.gpu_p95 || 0) - (a.gpu_p95 || 0));
       $("scenesTable").closest("details").hidden = !scenes.length;
       $("scenesTable").innerHTML =
-        `<thead><tr><th>Scene</th><th class="r">FPS</th><th class="r">Frame p95</th><th class="r">GPU p50</th><th class="r">GPU p95</th><th class="r">Hitch</th><th class="r">Dropped</th></tr></thead><tbody>` +
-        sorted.map(r => `<tr class="pick${pick === r.scene ? " selected" : ""}" data-scene="${esc(r.scene)}" tabindex="0"><td>${esc(r.scene)}</td><td class="r">${fmt(r.fps)}</td><td class="r">${approx(r, "frame_p95")}${fmt(r.frame_p95)} ms</td><td class="r">${r.gpu_p50 > 0 ? fmt(r.gpu_p50) + " ms" : "–"}</td><td class="r">${r.gpu_p95 > 0 ? approx(r, "gpu_p95") + fmt(r.gpu_p95) + " ms" : "–"}</td><td class="r">${fmt(r.hitch)} ms/s</td><td class="r">${int(r.dropped)}</td></tr>`).join("") +
+        `<thead><tr><th>Scene</th><th class="r">FPS</th><th class="r">Frame p95</th><th class="r hide-sm">GPU p50</th><th class="r">GPU p95</th><th class="r hide-sm">CPU per frame</th><th class="r">Hitch</th><th class="r hide-sm">Dropped</th><th class="r hide-sm">Sessions</th></tr></thead><tbody>` +
+        sorted.map(r => `<tr class="pick${pick === r.scene ? " selected" : ""}" data-scene="${esc(r.scene)}" tabindex="0"><td>${esc(r.scene)}</td><td class="r">${fmt(r.fps)}</td><td class="r">${approx(r, "frame_p95")}${fmt(r.frame_p95)} ms</td><td class="r hide-sm">${r.gpu_p50 > 0 ? fmt(r.gpu_p50) + " ms" : "–"}</td><td class="r">${r.gpu_p95 > 0 ? approx(r, "gpu_p95") + fmt(r.gpu_p95) + " ms" : "–"}</td><td class="r hide-sm">${r.cpu_ms != null ? fmt(r.cpu_ms, 2) + " ms" : "–"}</td><td class="r">${fmt(r.hitch)} ms/s</td><td class="r hide-sm">${int(r.dropped)}</td><td class="r hide-sm">${r.sessions != null ? int(r.sessions) : "–"}</td></tr>`).join("") +
         `</tbody>`;
       bindPicks($("scenesTable"));
     }
@@ -1290,7 +1446,6 @@
       const cells = state.data.device_scene || [];
       const devices = [...new Set(cells.map(r => r.device))].sort();
       const { scene: ps, device: pd } = state.sel;
-      const kfmt = n => n >= 1000 ? `${fmt(n / 1000, n >= 10000 ? 0 : 1)}k` : int(n);
       const compact = innerWidth < 600;
       const cols = heatCols();
       box.classList.toggle("compact", compact);
@@ -1317,10 +1472,10 @@
           const on = (!ps || sc === ps) && (!pd || dv === pd);
           const sel = ps === sc && pd === dv;
           html += `<button type="button" class="mx-cell${on ? "" : " dim"}${sel ? " sel" : ""}" style="--rgb:${heatRgb(share)}" data-scene="${esc(sc)}" data-device="${esc(dv)}"
-              aria-label="${esc(sc)} on ${esc(deviceName(dv))}: GPU ${fmt(c.gpu_p95)} ms, ${fmt(share * 100, 0)}% of the ${targetOf(c)} fps frame">
+              aria-label="${esc(sc)} on ${esc(deviceName(dv))}: GPU ${fmt(c.gpu_p95)} ms, ${fmt(share * 100, 0)}% of the ${targetOf(c)} fps frame${c.sessions != null ? `, ${plural(c.sessions, "session")}` : ""}">
             <span class="mx-name" title="${esc(sc)}">${esc(sc)}</span><span class="mx-val">${c.gpu_p95 > 0 ? fmt(c.gpu_p95) : "–"}<small>ms GPU</small></span>
             <span class="mx-bar"><i style="width:${Math.min(100, share * 100)}%"></i></span>
-            <span class="mx-meta"><span class="${share > 1 ? "mx-over" : ""}">${!(c.gpu_p95 > 0) ? "GPU not measured" : share > 1 ? "over budget" : fmt(share * 100, 0) + "% of frame"}</span>${compact ? "" : `<span>${kfmt(c.frames || 0)} frames</span>`}</span>
+            <span class="mx-meta"><span class="${share > 1 ? "mx-over" : ""}">${!(c.gpu_p95 > 0) ? "GPU not measured" : share > 1 ? "over budget" : fmt(share * 100, 0) + "% of frame"}</span>${compact ? "" : c.sessions != null && c.sessions < MIN_SESSIONS ? `<span class="mx-thin" title="Few independent sessions: a lead to check, not a finding">${plural(c.sessions, "session")}</span>` : `<span>${kfmt(c.frames || 0)} frames</span>`}</span>
           </button>`;
           shown++;
         });
@@ -1400,6 +1555,8 @@
       state.sel = { scene: sel.scene || null, device: sel.device || null };
       syncUrl();
       renderScenes(); renderHeat(); renderInspector();
+      // Over time follows the selection: ask the server for that slice
+      if (!state.legacy) { state.timelineAll = false; clearTimeout(select.t); select.t = setTimeout(() => refresh(), 120); }
     }
 
     function bindPicks(root) {
@@ -1425,23 +1582,45 @@
       const cells = d.device_scene || [];
       const chips = `<div class="chips">${scene ? `<span class="chip">${esc(scene)}<button type="button" data-clear="scene" aria-label="Clear scene">×</button></span>` : ""}${device ? `<span class="chip">${esc(deviceName(device))}<button type="button" data-clear="device" aria-label="Clear phone">×</button></span>` : ""}</div>`;
       const what = scene && device ? `${esc(scene)} on ${esc(deviceName(device))}` : scene ? esc(scene) : esc(deviceName(device));
-      // Only this panel is filtered; say so, so nobody reads the page totals as this selection's
-      let html = chips + `<p class="scope-note">Only this panel shows ${what}. The numbers above and the charts cover every scene and phone in view.</p>`;
+      // Say exactly which parts of the page follow the selection, so nobody reads the totals as its numbers
+      let html = chips + `<p class="scope-note">${state.legacy
+        ? `Only this panel shows ${what}. The numbers above and the charts cover every scene and phone in view.`
+        : `This panel and Over time show ${what}. The totals, checks and the other charts cover every scene and phone in view.`}</p>`;
       const gpuCell = r => r && r.gpu_p95 > 0 ? approx(r, "gpu_p95") + fmt(r.gpu_p95) : "–";
       const frameCell = r => r ? approx(r, "frame_p95") + fmt(r.frame_p95) : "–";
+      // CPU time the app spends building a frame, as passed to recordFrame: not the whole main thread
+      const cpuCell = r => r && r.cpu_ms != null ? `${fmt(r.cpu_ms, 2)}` : "–";
+      const cpuTitle = "CPU time the app spends building each frame (what it passes to recordFrame), averaged over the frames it drew. It is not total main-thread load, so it can't prove a scene is CPU-bound on its own.";
+      // What the numbers rest on, and how much to trust them
+      const evidence = r => {
+        if (!r || r.sessions == null) return "";
+        const parts = [plural(r.sessions, "session"), r.windows != null && plural(r.windows, "report window"), `${kfmt(r.frames || 0)} frames`,
+          r.gpu_p95 > 0 && r.gpu_coverage != null && `GPU timed on ${fmt(r.gpu_coverage * 100, 0)}% of frames`,
+          r.first_at && r.last_at && `${timeLabel(r.first_at)} to ${timeLabel(r.last_at)}`,
+          r.builds && r.builds.includes("debug") && (r.builds.length > 1 ? "includes debug builds" : "debug builds only"),
+          r.mixed_targets && "several target rates",
+          r.degraded > 0 && `reduced quality on ${fmt(r.degraded * 100, 0)}% of frames`].filter(Boolean);
+        const thin = !enoughData(r);
+        return `<p class="evidence${thin ? " thin" : ""}">${esc(parts.join(", "))}.${thin ? ` <b>Small sample:</b> treat this as a lead to check, not a finding. A verdict needs ${MIN_SESSIONS} sessions and ${int(MIN_FRAMES)} frames.` : ""}</p>`;
+      };
 
       if (scene && device) {
         const c = cells.find(r => r.scene === scene && r.device === device);
         const s = (d.scenes || []).find(r => r.scene === scene);
-        html += c ? `<div class="mini"><div><span>GPU p95</span><b>${gpuCell(c)}</b></div><div><span>Frame p95</span><b>${frameCell(c)}</b></div><div><span>Frames</span><b>${int(c.frames)}</b></div></div>
+        html += c ? `<div class="mini"><div><span>GPU p95</span><b>${gpuCell(c)}</b></div><div><span>Frame p95</span><b>${frameCell(c)}</b></div>${c.cpu_ms !== undefined
+            ? `<div title="${esc(cpuTitle)}"><span>CPU per frame</span><b>${cpuCell(c)}</b></div>` : `<div><span>Frames</span><b>${int(c.frames)}</b></div>`}</div>
+          ${evidence(c)}
           ${budgetBar(c.gpu_p95, c)}
           <p class="hint">${compareText(c.gpu_p95, s && s.gpu_p95, `${esc(scene)} on all phones`)}</p>` : `<p class="empty">No data for this pair in the selected range.</p>`;
       } else if (scene) {
         const s = (d.scenes || []).find(r => r.scene === scene);
         const per = cells.filter(r => r.scene === scene).sort((a, b) => (b.gpu_p95 || 0) - (a.gpu_p95 || 0));
         if (s) {
-          html += `<div class="mini"><div><span>GPU p95</span><b>${gpuCell(s)}</b></div><div><span>Frame p95</span><b>${frameCell(s)}</b></div><div><span>FPS</span><b>${fmt(s.fps)}</b></div>
-            <div><span>Hitch ms/s</span><b>${fmt(s.hitch)}</b></div><div><span>Dropped</span><b>${int(s.dropped)}</b></div><div><span>Reduced quality</span><b>${fmt((s.degraded || 0) * 100, 0)}%</b></div></div>
+          html += `<div class="mini"><div><span>GPU p95</span><b>${gpuCell(s)}</b></div><div><span>Frame p95</span><b>${frameCell(s)}</b></div>${s.cpu_ms !== undefined
+              ? `<div title="${esc(cpuTitle)}"><span>CPU per frame</span><b>${cpuCell(s)}</b></div>` : `<div><span>FPS</span><b>${fmt(s.fps)}</b></div>`}
+            <div><span>Hitch ms/s</span><b>${fmt(s.hitch)}</b></div><div><span>Dropped</span><b>${int(s.dropped)}</b></div>${s.cpu_ms !== undefined
+              ? `<div><span>FPS</span><b>${fmt(s.fps)}</b></div>` : `<div><span>Reduced quality</span><b>${fmt((s.degraded || 0) * 100, 0)}%</b></div>`}</div>
+            ${evidence(s)}
             ${budgetBar(s.gpu_p95, s)}
             <p class="hint">${compareText(s.gpu_p95, d.overall && d.overall.gpu_p95, "all scenes together")}</p>
             ${per.some(r => r.gpu_p95 > 0) ? `<div class="rows"><h3>By phone, GPU p95</h3>${rowbars(per.map(r => ({ name: deviceName(r.device), value: r.gpu_p95, key: r.device })), Math.max(budgetOf(s), ...per.map(r => r.gpu_p95 || 0)), "ms")}</div>` : ""}`;
@@ -1455,7 +1634,8 @@
         html += per.length ? `<div class="mini">${dv
               ? `<div><span>GPU p95</span><b>${gpuCell(dv)}</b></div><div><span>Frame p95</span><b>${frameCell(dv)}</b></div>`
               : `<div><span>Heaviest GPU p95</span><b>${gpuCell(per[0])}</b></div><div><span>Heaviest frame p95</span><b>${fmt(Math.max(...per.map(r => r.frame_p95 || 0)))}</b></div>`}
-            <div><span>Frames</span><b>${int(frames)}</b></div></div>
+            ${dv && dv.cpu_ms !== undefined ? `<div title="${esc(cpuTitle)}"><span>CPU per frame</span><b>${cpuCell(dv)}</b></div>` : `<div><span>Frames</span><b>${int(frames)}</b></div>`}</div>
+            ${evidence(dv)}
           ${per.some(r => r.gpu_p95 > 0) ? `<div class="rows"><h3>By scene, GPU p95</h3>${rowbars(per.map(r => ({ name: r.scene, value: r.gpu_p95 })), Math.max(budgetOf(per[0]), ...per.map(r => r.gpu_p95 || 0)), "ms")}</div>` : ""}` : `<p class="empty">No data for this phone in the selected range.</p>`;
         setTimeout(() => body.querySelectorAll(".rows .rowbar").forEach((el, i) => { const go = () => select({ scene: per[i].scene, device }); el.addEventListener("click", go); el.addEventListener("keydown", e => { if (e.key === "Enter") go(); }); }), 0);
       }
@@ -1479,7 +1659,10 @@
     }
 
     // ---------- build comparison ----------
-    const vkey = v => `${v.app}|${v.version}`;
+    // A build is a version in one channel: debug and release of the same version are measured
+    // differently and are never compared with each other
+    const vkey = v => `${v.app}|${v.version}|${v.build || ""}`;
+    const vname = v => `${v.version}${v.build === "debug" ? " (debug)" : ""}`;
     // Builds in release order: when each was first seen, then by version number.
     function sortVersions(vs) {
       const num = s => (String(s).match(/\d+/g) || []).map(Number);
@@ -1490,14 +1673,14 @@
     }
     function latestPairs(vs) {
       const pairs = [];
-      for (const a of [...new Set(vs.map(v => v.app))]) { const s = sortVersions(vs.filter(v => v.app === a)); if (s.length >= 2) pairs.push([s[s.length - 2], s[s.length - 1]]); }
+      for (const k of [...new Set(vs.map(v => `${v.app}|${v.build || ""}`))]) { const s = sortVersions(vs.filter(v => `${v.app}|${v.build || ""}` === k)); if (s.length >= 2) pairs.push([s[s.length - 2], s[s.length - 1]]); }
       return pairs;
     }
 
     // Two builds are compared only on the phone models both ran on, each model weighted the
     // same for both builds, so a different phone mix can't pass for a code change. A verdict
     // needs enough data on each side.
-    const MIN_SESSIONS = 3, MIN_FRAMES = 5000;
+    // MIN_SESSIONS and MIN_FRAMES are defined with the health checks above
     const bucketMid = i => i < 200 ? (i + 0.5) * 0.25 : i < 275 ? 50 + (i - 200 + 0.5) * 2 : 200 + (i - 275 + 0.5) * 25;
     function weightedPct(parts, p) {           // parts: [{hist: [[bucket, count]], weight}]
       const acc = new Map();
@@ -1515,7 +1698,7 @@
       if (!vd) {   // dashboard function from before histograms: plain totals, no phone matching
         return { matched: false, a: A, b: B, devices: [], enough: false, sessionsA: A.sessions, sessionsB: B.sessions };
       }
-      const of = v => vd.filter(r => r.app === v.app && r.version === v.version);
+      const of = v => vd.filter(r => r.app === v.app && r.version === v.version && (r.build || "") === (v.build || ""));
       const rowsA = of(A), rowsB = of(B);
       const devices = rowsA.map(r => r.device).filter(dv => rowsB.some(r => r.device === dv));
       const pick = (rows, dv) => rows.find(r => r.device === dv);
@@ -1546,22 +1729,22 @@
       const keys = vs.map(vkey);
       if (!keys.includes(state.compare.cand)) state.compare.cand = keys[keys.length - 1] || null;
       const cand = vs.find(v => vkey(v) === state.compare.cand);
-      // The baseline is always another build of the same app.
-      const peers = cand ? vs.filter(v => v.app === cand.app && vkey(v) !== vkey(cand)) : [];
+      // The baseline is always another build of the same app in the same channel.
+      const peers = cand ? vs.filter(v => v.app === cand.app && (v.build || "") === (cand.build || "") && vkey(v) !== vkey(cand)) : [];
       if (!peers.some(v => vkey(v) === state.compare.base)) {
         const earlier = cand ? peers.filter(v => vs.indexOf(v) < vs.indexOf(cand)) : [];
         state.compare.base = (earlier.length ? vkey(earlier[earlier.length - 1]) : peers.length ? vkey(peers[peers.length - 1]) : null);
       }
-      const label = v => `${apps.length > 1 ? esc(appName(v.app)) + " " : ""}${esc(v.version)}`;
+      const label = v => `${apps.length > 1 ? esc(appName(v.app)) + " " : ""}${esc(vname(v))}`;
       const candOpts = apps.length > 1
-        ? apps.map(a => `<optgroup label="${esc(appName(a))}">${vs.filter(v => v.app === a).map(v => `<option value="${esc(vkey(v))}">${esc(v.version)}</option>`).join("")}</optgroup>`).join("")
+        ? apps.map(a => `<optgroup label="${esc(appName(a))}">${vs.filter(v => v.app === a).map(v => `<option value="${esc(vkey(v))}">${esc(vname(v))}</option>`).join("")}</optgroup>`).join("")
         : vs.map(v => `<option value="${esc(vkey(v))}">${label(v)}</option>`).join("");
       const baseOpts = peers.map(v => `<option value="${esc(vkey(v))}">${label(v)}</option>`).join("");
       const b = $("baseline"), c = $("candidate");
       if (c.dataset.opts !== candOpts) { c.innerHTML = candOpts; c.dataset.opts = candOpts; }
       if (b.dataset.opts !== baseOpts) { b.innerHTML = baseOpts; b.dataset.opts = baseOpts; }
       b.value = state.compare.base || ""; c.value = state.compare.cand || "";
-      const comparable = vs.some(v => vs.some(w => w !== v && w.app === v.app));
+      const comparable = vs.some(v => vs.some(w => w !== v && w.app === v.app && (w.build || "") === (v.build || "")));
       document.querySelector("#pCompare .compare-controls").hidden = !comparable;
       $("versionsTable").closest("details").hidden = !vs.length;
 
@@ -1569,11 +1752,13 @@
       const note = msg => `<tbody><tr><td class="muted" style="white-space:normal">${msg}</td></tr></tbody>`;
       if (!A || !B) {
         $("compareTable").innerHTML = note(!vs.length ? "No build has reported in this range yet."
-          : "Each app has only one build in this range. Ship the next build and the comparison fills in automatically.");
+          : cand && vs.some(v => v.app === cand.app && (v.build || "") !== (cand.build || ""))
+            ? `There is no other ${cand.build === "debug" ? "debug" : "release"} build of this app in this range. Debug and release builds are measured differently, so they aren't compared with each other.`
+            : "Each app has only one build in this range. Ship the next build and the comparison fills in automatically.");
       } else {
         const cmp = compareBuilds(d, A, B);
         if (cmp.matched && !cmp.devices.length) {
-          $("compareTable").innerHTML = note(`${esc(A.version)} and ${esc(B.version)} haven't run on the same phone model yet, so they can't be compared fairly.`);
+          $("compareTable").innerHTML = note(`${esc(vname(A))} and ${esc(vname(B))} haven't run on the same phone model yet, so they can't be compared fairly.`);
         } else {
           const x = cmp.a, y = cmp.b;
           const rows = [["Frame rate", "fps", true], ["Frame time p95", "frame_p95", false], ["GPU time p95", "gpu_p95", false], ["Hitch time", "hitch", false]];
@@ -1583,7 +1768,7 @@
             : "Totals for each build. Phone mix isn't matched in this view.";
           const enoughNote = cmp.enough ? "" : ` Not enough data to call a change yet: at least ${MIN_SESSIONS} sessions and ${int(MIN_FRAMES)} frames per build.`;
           $("compareTable").innerHTML = `<caption class="compare-scope">${scope}${enoughNote}</caption>
-            <thead><tr><th>Metric</th><th class="r">${esc(A.version)}</th><th class="r">${esc(B.version)}</th><th class="r">Change</th><th class="hide-sm"></th></tr></thead><tbody>` +
+            <thead><tr><th>Metric</th><th class="r">${esc(vname(A))}</th><th class="r">${esc(vname(B))}</th><th class="r">Change</th><th class="hide-sm"></th></tr></thead><tbody>` +
             rows.map(([title, k, higherBetter]) => {
               const a = x[k], b2 = y[k];
               const pct = a != null && b2 != null && a > 0 ? (b2 - a) / a * 100 : null;
@@ -1602,7 +1787,7 @@
       $("versionsTable").innerHTML =
         `<thead><tr><th>Build</th><th class="r">Sessions</th><th class="r">FPS</th><th class="r">Frame p95</th><th class="r">GPU p95</th><th>Hitch</th></tr></thead><tbody>` +
         vs.slice().reverse().map(r => { const v = verdict(r.hitch);
-          return `<tr><td>${esc(appName(r.app))} <span class="muted">${esc(r.version)}</span></td><td class="r">${int(r.sessions)}</td><td class="r">${fmt(r.fps)}</td><td class="r">${approx(r, "frame_p95")}${fmt(r.frame_p95)} ms</td><td class="r">${r.gpu_p95 > 0 ? fmt(r.gpu_p95) + " ms" : "–"}</td><td>${fmt(r.hitch)} ms/s &nbsp;${heatTag(v[0], v[1])}</td></tr>`; }).join("") +
+          return `<tr><td>${esc(appName(r.app))} <span class="muted">${esc(vname(r))}</span></td><td class="r">${int(r.sessions)}</td><td class="r">${fmt(r.fps)}</td><td class="r">${approx(r, "frame_p95")}${fmt(r.frame_p95)} ms</td><td class="r">${r.gpu_p95 > 0 ? fmt(r.gpu_p95) + " ms" : "–"}</td><td>${fmt(r.hitch)} ms/s &nbsp;${heatTag(v[0], v[1])}</td></tr>`; }).join("") +
         `</tbody>`;
     }
 
@@ -1626,10 +1811,10 @@
     function exportCsv() {
       const d = state.data; if (!d) return;
       const q = v => { const s = String(v ?? ""); return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
-      const lines = ["section,scene,device,frames,fps,frame_p95_ms,gpu_p50_ms,gpu_p95_ms,hitch_ms_per_s,dropped,target_fps,p95_exact"];
-      for (const s of d.scenes || []) lines.push(["scene", s.scene, "", s.frames, s.fps, s.frame_p95, s.gpu_p50, s.gpu_p95, s.hitch, s.dropped, targetOf(s), s.frame_p95_exact !== false].map(q).join(","));
-      for (const c of d.device_scene || []) lines.push(["scene_device", c.scene, deviceName(c.device), c.frames, "", c.frame_p95, "", c.gpu_p95, "", "", targetOf(c), c.frame_p95_exact !== false].map(q).join(","));
-      for (const v of d.versions || []) lines.push(["build", "", "", v.frames ?? "", v.fps, v.frame_p95, "", v.gpu_p95, v.hitch, "", targetOf(v), v.frame_p95_exact !== false].map(q).join(",").replace(/^build,,/, `build,${q(appName(v.app) + " " + v.version)},`));
+      const lines = ["section,app,scene,device,build,frames,sessions,fps,frame_p95_ms,gpu_p50_ms,gpu_p95_ms,gpu_coverage,cpu_ms_per_frame,hitch_ms_per_s,dropped,target_fps,p95_exact"];
+      for (const s of d.scenes || []) lines.push(["scene", s.app ?? "", s.scene_name ?? s.scene, "", "", s.frames, s.sessions ?? "", s.fps, s.frame_p95, s.gpu_p50, s.gpu_p95, s.gpu_coverage ?? "", s.cpu_ms ?? "", s.hitch, s.dropped, targetOf(s), s.frame_p95_exact !== false].map(q).join(","));
+      for (const c of d.device_scene || []) lines.push(["scene_device", c.app ?? "", c.scene_name ?? c.scene, deviceName(c.device), (c.builds || []).join(" "), c.frames, c.sessions ?? "", c.fps ?? "", c.frame_p95, "", c.gpu_p95, c.gpu_coverage ?? "", c.cpu_ms ?? "", c.hitch ?? "", c.dropped ?? "", targetOf(c), c.frame_p95_exact !== false].map(q).join(","));
+      for (const v of d.versions || []) lines.push(["build", v.app, v.version, "", v.build ?? "", v.frames ?? "", v.sessions ?? "", v.fps, v.frame_p95, "", v.gpu_p95, "", "", v.hitch, "", targetOf(v), v.frame_p95_exact !== false].map(q).join(","));
       const blob = new Blob([lines.join("\n")], { type: "text/csv" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
@@ -1712,7 +1897,11 @@
         .checks li.critical { background: #fff3ee; border-color: #ffd2bf; }
         .checks li.warning { background: #fff9ec; border-color: #f6e2b5; }
         .checks em { font-style: normal; font-weight: 700; font-size: 13px; }
-        .checks b { display: block; } .checks span { color: var(--muted); font-size: 14px; }
+        .checks b { display: block; } .checks span { display: block; color: var(--muted); font-size: 14px; }
+        .checks span.basis { font-size: 12px; margin-top: 4px; }
+        .checks li.potential { background: #fffbf2; border-color: #f3e6c8; }
+        .checks em.muted { color: var(--muted); }
+        .checks-sum { margin: 0 0 10px; color: var(--muted); }
         figure { margin: 0 0 16px; border-radius: 18px; overflow: hidden; background: #15110e; break-inside: avoid; }
         figcaption { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; padding: 14px 18px 0; color: #fff7ee; }
         figcaption span { color: #9a928a; font-size: 13px; }
@@ -1767,7 +1956,7 @@
     </div>
     <div class="kpis">
       <div><span>Sessions</span><b>${int(t.sessions)}</b></div>
-      <div><span>Devices</span><b>${int(t.devices)}</b></div>
+      <div><span>Phone models</span><b>${int(t.devices)}</b></div>
       <div><span>Frames measured</span><b>${int(o.frames)}</b></div>
       <div><span>Time in use</span><b>${esc(useTime)}</b></div>
       <div><span>Average frame rate</span><b>${fmt(o.fps)}<small>fps</small></b></div>
@@ -1779,8 +1968,8 @@
 
   <section>
     <h2>Health checks</h2>
-    <ul class="checks">${checks.length ? checks.map(c => `<li class="${c.sev}"><em class="${c.sev === "critical" ? "bad" : "warn"}">${c.sev === "critical" ? "Critical" : "Warning"}</em><div><b>${esc(c.title)}</b><span>${esc(c.detail)}</span></div></li>`).join("")
-      : `<li><em class="good">Passing</em><div><b>Within budget</b><span>Every scene fits the GPU budget, hitches are under 5 ms/s and no regression against the previous build.</span></div></li>`}</ul>
+    <p class="checks-sum">${esc(checkSummary(checks)[0])}.</p>
+    <ul class="checks">${checks.some(c => c.sev !== "unknown") ? "" : `<li><em class="good">No issues</em><div><b>Nothing over its threshold in the measured data</b><span>${esc(CHECKED)}</span></div></li>`}${checks.map(c => `<li class="${c.sev}"><em class="${c.sev === "critical" ? "bad" : c.sev === "unknown" ? "muted" : "warn"}">${esc(SEV[c.sev][0])}</em><div><b>${esc(c.title)}</b><span>${esc(c.detail)}</span>${c.basis ? `<span class="basis">${esc(c.basis)}</span>` : ""}</div></li>`).join("")}</ul>
   </section>
 
   <section>
@@ -1808,7 +1997,7 @@
 
   ${vs.length ? `<section><h2>Builds</h2><div class="wide"><table>
     <thead><tr><th>Build</th><th class="r">Sessions</th><th class="r">FPS</th><th class="r">Frame p95</th><th class="r">GPU p95</th><th class="r">Hitch</th></tr></thead><tbody>
-    ${vs.map(v => `<tr><td>${esc(appName(v.app))} <span style="color:var(--muted)">${esc(v.version)}</span></td><td class="r">${int(v.sessions)}</td><td class="r">${fmt(v.fps)}</td><td class="r">${fmt(v.frame_p95)} ms</td><td class="r">${v.gpu_p95 > 0 ? fmt(v.gpu_p95) + " ms" : "–"}</td><td class="r ${hTone(v.hitch)}">${fmt(v.hitch)} ms/s</td></tr>`).join("")}
+    ${vs.map(v => `<tr><td>${esc(appName(v.app))} <span style="color:var(--muted)">${esc(vname(v))}</span></td><td class="r">${int(v.sessions)}</td><td class="r">${fmt(v.fps)}</td><td class="r">${fmt(v.frame_p95)} ms</td><td class="r">${v.gpu_p95 > 0 ? fmt(v.gpu_p95) + " ms" : "–"}</td><td class="r ${hTone(v.hitch)}">${fmt(v.hitch)} ms/s</td></tr>`).join("")}
   </tbody></table></div></section>` : ""}
 
   <section class="notes"><h2>How to read this</h2>

@@ -222,7 +222,7 @@
               <tr><td>A game</td><td>The level or screen</td><td>Menu, Level 3, Boss fight</td></tr>
             </tbody>
           </table></div>
-          <p>Several apps can report into the same backend. Each row carries the app's bundle id, so the dashboard can show all apps together or one at a time, each with its own scenes, phones and builds.</p>
+          <p>Several apps can report into the same backend. Each row carries the app's bundle id, so the dashboard can show all apps together or one at a time, each with its own scenes, phones and builds. Scenes are kept apart per app: two apps with a scene called Menu are two rows, never one shared percentile, and with several apps in view the app's name is added to the scene's label.</p>
           <div class="why"><p><b>Why the app picks the name.</b> Only the app knows which parts of it cost differently to draw. A fixed list would fit one app and be meaningless for the next. Use a small, stable set of names: they become the rows of every breakdown, and at most 32 are kept apart.</p></div>
         </section>
 
@@ -360,7 +360,7 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
 
         <section id="backend">
           <h2>Backend and aggregation</h2>
-          <p>All rows land in one Postgres table, <code>perf_reports</code>, with the payload stored as JSON. The dashboard reads through <code>octimonitor_overview(hours, app)</code>, which runs with the table owner's rights.</p>
+          <p>All rows land in one Postgres table, <code>perf_reports</code>, with the payload stored as JSON. The dashboard reads through <code>octimonitor_overview(hours, app, scene, device, scene_app)</code>, which runs with the table owner's rights. The last three are optional and narrow only the over-time chart to a selected scene and phone model.</p>
 
           <h3>How windows are combined</h3>
           <div class="table-wrap"><table>
@@ -370,16 +370,23 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
               <tr><td>Hitch time</td><td>All lateness ÷ all seconds</td><td>Yes</td></tr>
               <tr><td>Frame p95</td><td>Read from the sum of every window's frame histogram</td><td>To half a bucket</td></tr>
               <tr><td>GPU p50, p95</td><td>Read from the sum of GPU histograms, over windows that measured GPU time only</td><td>To half a bucket</td></tr>
-              <tr><td>Target rate</td><td>The most common target rate in the group; groups that mix rates are flagged</td><td>Yes</td></tr>
+              <tr><td>Target rate</td><td>The most common target rate in the group; groups that mix rates are flagged, and frame time is also returned per rate</td><td>Yes</td></tr>
+              <tr><td>GPU coverage</td><td>Measured GPU samples ÷ frames, counting at most one sample per frame</td><td>Yes</td></tr>
+              <tr><td>CPU per frame</td><td>The CPU time the app reports for building a frame, averaged over every frame it drew</td><td>Yes</td></tr>
+              <tr><td>Sessions, report windows</td><td>Counted per group, so a finding shows whether it rests on one long run or on many people</td><td>Yes</td></tr>
               <tr><td>Dropped frames</td><td>Sum</td><td>Yes</td></tr>
               <tr><td>Reduced quality</td><td>Average of the windows' share, weighted by frame count</td><td>Yes</td></tr>
               <tr><td>Active now</td><td>Sessions that sent a report in the last 2 minutes</td><td>Yes</td></tr>
             </tbody>
           </table></div>
-          <p>The function also returns how complete the data is: the share of frames timed at the screen, the share covered by histograms, the share with GPU timing, and reports lost on phones. The dashboard shows this as one line under the key numbers.</p>
+          <p>The function also returns how complete the data is: the share of frames timed at the screen, the share covered by histograms, the share with GPU timing, the share from debug builds, and reports lost on phones. The dashboard shows this as one line under the key numbers.</p>
+          <p>A build is a version in one channel. Debug builds run without compiler optimizations and are measured differently, so a debug and a release build of the same version are two builds, and only builds of the same channel are compared.</p>
 
           <h3>Time</h3>
-          <p>Each report is placed at the moment its window ended on the phone (falling back to its arrival time if the phone's clock is implausible). The over-time chart uses 1-minute buckets for the last hour, 10-minute buckets for 24 hours, and 1-hour buckets for 7 and 30 days. Long ranges open on the most recent stretch; scrolling or pinching shows the rest.</p>
+          <p>Each report is selected and placed by the moment its window ended on the phone (falling back to its arrival time if the phone's clock is implausible), so a report delivered late after the phone was offline counts in the period it describes, not when it arrived. The over-time chart uses 1-minute buckets for the last hour, 10-minute buckets for 24 hours, and 1-hour buckets for 7 and 30 days, on a real time axis: a stretch with no reports is a break in the line, so a two-day pause never looks like the next ten minutes. Long ranges open on the most recent stretch; scrolling or pinching shows the rest.</p>
+
+          <h3>Speed</h3>
+          <p>Histogram entries are read once and summed per scene, phone, build and target before any percentile is taken, so the function makes one pass over the data however many groups the page shows. On a test set of 4,500 reports (about 38 hours of play) it answers in about 1.6 seconds. Supabase stops queries from the public key after a few seconds; if a range ever holds more reports than that allows, the dashboard says so and suggests a shorter range.</p>
 
           <h3>Minutes into a session</h3>
           <p>For the heat chart each report is placed by minutes of use since that session started, from the phone's own clock, so a long session that began before the selected range isn't mistaken for a new one. "Sessions in serious heat" is the share of sessions that were serious or critical at some point in that minute. Older reports without the session clock fall back to the time since that session's first report in the range.</p>
@@ -391,15 +398,15 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
             <thead><tr><th>Block</th><th>What it shows</th></tr></thead>
             <tbody>
               <tr><td>Hitch gauge</td><td>Overall hitch time for the selected apps and range, on the 0 to 20+ ms/s scale</td></tr>
-              <tr><td>Key numbers</td><td>Active now, sessions and devices, frames measured and time in use, fps, frame time p95, and a line on how complete the data is</td></tr>
+              <tr><td>Key numbers</td><td>Active now, sessions and phone models, frames measured and time in use, fps, frame time p95, and a line on how complete the data is</td></tr>
               <tr><td>Apps</td><td>The same numbers per app, when more than one app reports</td></tr>
               <tr><td>Health checks</td><td>The rules below, run on every refresh</td></tr>
-              <tr><td>Over time</td><td>Frame p95, fps or hitch time per time bucket, with the budget and threshold lines</td></tr>
+              <tr><td>Over time</td><td>Frame p95, fps or hitch time per time bucket, with the budget and threshold lines. With several target rates in view, frame time and fps get one line per rate, each against its own budget. When a scene or phone is selected the chart follows it, and the line under the title says so</td></tr>
               <tr><td>GPU per scene</td><td>GPU p95 per scene against its frame budget</td></tr>
-              <tr><td>Inspector</td><td>A selected scene, phone or pair in detail. Only this panel is filtered; the rest of the page always covers everything in view, and says so</td></tr>
-              <tr><td>Scene × device</td><td>GPU p95 for each scene on each phone model, most expensive first. Three rows are shown, the rest on request. Tile colour is the share of its frame budget</td></tr>
+              <tr><td>Inspector</td><td>A selected scene, phone or pair in detail: GPU and frame time, CPU per frame, and what the numbers rest on (sessions, report windows, frames, GPU coverage, period, debug builds). Fewer than 3 sessions or 5,000 frames is marked as a lead to check, not a finding. This panel and Over time follow the selection; the rest of the page covers everything in view, and says so</td></tr>
+              <tr><td>Scene × device</td><td>GPU p95 for each scene on each phone model, most expensive first. Three rows are shown, the rest on request. Tile colour is the share of its frame budget; tiles with fewer than 3 sessions show their session count</td></tr>
               <tr><td>Heat over a session</td><td>Hitch time and share of sessions in serious heat by minute of use. When both rise together, throttling is a likely cause; it is a correlation, not proof</td></tr>
-              <tr><td>Build comparison</td><td>Two builds of the same app, compared only on the phone models both ran on, each weighted the same, with sessions and frames shown. No verdict until each side has at least 3 sessions and 5,000 frames</td></tr>
+              <tr><td>Build comparison</td><td>Two builds of the same app and channel, compared only on the phone models both ran on, each weighted the same, with sessions and frames shown. No verdict until each side has at least 3 sessions and 5,000 frames</td></tr>
               <tr><td>Latest reports</td><td>The 12 newest 30-second windows, showing the scene used most in each</td></tr>
               <tr><td>Report</td><td>A self-contained HTML page with the same numbers, charts and checks for the current view, ready to forward or save as PDF. The raw data is also available as CSV from the search menu</td></tr>
             </tbody>
@@ -409,22 +416,33 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
 
         <section id="checks">
           <h2>Health check rules</h2>
-          <p>Simple, explainable rules, so every warning can be traced back to a number on the page. "Budget" always means the frame budget of the group's own target rate.</p>
+          <p>Simple, explainable rules, so every finding can be traced back to a number on the page. A finding states what was measured, never a cause: "GPU p95 exceeds its frame budget" is a fact about GPU time, while "the shader causes the hitches" would be a guess. Under each finding is its basis: the metric, the threshold and the sample it rests on. "Budget" always means the frame budget of the group's own target rate.</p>
+          <div class="table-wrap"><table>
+            <thead><tr><th>Status</th><th>When</th></tr></thead>
+            <tbody>
+              <tr><td>Critical, Warning</td><td>A measured value is over its threshold and the group has at least 3 sessions and 5,000 frames (for GPU rules, with GPU timing on at least 80% of its frames)</td></tr>
+              <tr><td>Potential</td><td>A value is over its threshold but the sample is smaller, GPU timing is partial, or the finding is a comparison or correlation that needs checking</td></tr>
+              <tr><td>Not evaluated</td><td>The telemetry a rule needs isn't there, for example no GPU timing. Missing data is never shown as passing</td></tr>
+            </tbody>
+          </table></div>
           <div class="table-wrap"><table>
             <thead><tr><th>Finding</th><th>Rule</th><th>Level</th></tr></thead>
             <tbody>
               <tr><td>Stutter</td><td>Overall hitch time over 10 ms/s</td><td>Critical</td></tr>
               <tr><td>Noticeable hitches</td><td>Overall hitch time from 5 to 10 ms/s</td><td>Warning</td></tr>
-              <tr><td>Slow frames</td><td>Frame p95 over 1.5 × the budget</td><td>Warning</td></tr>
-              <tr><td>Misses the GPU budget</td><td>A scene's GPU p95 over its budget</td><td>Critical</td></tr>
+              <tr><td>Slow frames</td><td>Frame p95 over 1.5 × the budget, per target rate when several are in view</td><td>Warning</td></tr>
+              <tr><td>GPU p95 exceeds its frame budget</td><td>A scene's GPU p95 over its budget</td><td>Critical</td></tr>
               <tr><td>Close to the budget</td><td>A scene's GPU p95 over 75% of its budget</td><td>Warning</td></tr>
-              <tr><td>Slow on one phone</td><td>Frame p95 over 1.5 × the budget for a scene on one phone model, with more than 300 frames measured</td><td>Warning</td></tr>
-              <tr><td>Phones heat up</td><td>In some minute of use, at least 30% of sessions (and at least 2) reach serious or critical heat</td><td>Warning</td></tr>
-              <tr><td>Regression</td><td>The newest build's hitch time or frame p95 is more than 10% worse than the previous build's, on the phone models both ran on, with at least 3 sessions and 5,000 frames on each side</td><td>Warning</td></tr>
+              <tr><td>Slow on one phone model</td><td>Frame p95 over 1.5 × the budget for a scene on one phone model, with more than 300 frames measured</td><td>Warning</td></tr>
+              <tr><td>Phones reach serious heat</td><td>In some minute of use, at least 30% of sessions (and at least 2) report serious or critical heat. This may indicate throttling; it doesn't prove it</td><td>Warning</td></tr>
+              <tr><td>Possible regression</td><td>The newest build's hitch time or frame p95 is more than 10% worse than the previous build of the same channel, on the phone models both ran on, with at least 3 sessions and 5,000 frames on each side</td><td>Potential</td></tr>
+              <tr><td>GPU not evaluated</td><td>Scenes without GPU timing</td><td>Not evaluated</td></tr>
             </tbody>
           </table></div>
+          <p>Every level above becomes Potential when its sample is too small, as described in the first table.</p>
           <div class="why"><p><b>Why 75% for GPU.</b> The GPU isn't the only thing in a frame: the CPU, the compositor and the display all need their share. A scene that already takes three quarters of the frame on the GPU has almost no margin left on a slower or hotter phone.</p>
-          <p><b>Why matched phones for builds.</b> If a new build happens to be used more on older phones, its averages get worse without any code change. Comparing the same phone models, each weighted the same for both builds, removes that effect.</p></div>
+          <p><b>Why matched phones for builds.</b> If a new build happens to be used more on older phones, its averages get worse without any code change. Comparing the same phone models, each weighted the same for both builds, removes that effect.</p>
+          <p><b>Why these thresholds.</b> 5 and 10 ms/s, 75% and 1.5 × are OctiMonitor's own working rules for where to look first. They are useful defaults, not industry standards or a guarantee of how smooth an app feels.</p></div>
         </section>
 
         <section id="cost">
@@ -446,7 +464,7 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
           <p>Every change to OctiMonitor runs two test jobs on GitHub:</p>
           <ul>
             <li><strong>The Swift package</strong> is built and tested on the iOS Simulator: percentiles, histogram buckets and merging, frame pacing from presentation times, missing GPU timing, the retry policy and the cost per frame.</li>
-            <li><strong>The database code</strong> runs against a real Postgres. A script simulates phones frame by frame, writes the reports the app would send, and checks the dashboard function's percentiles, fps, hitch time and heat shares against values computed directly from every frame. A second script, run as the public role, checks that unlisted apps, malformed reports, floods and reading the raw table are all refused, that floods get the 429 answer the app retries on, that malformed rows stored earlier can't break the dashboard, and that upgrading from the first version works and keeps the apps already reporting.</li>
+            <li><strong>The database code</strong> runs against a real Postgres. A script simulates phones frame by frame, writes the reports the app would send, and checks the dashboard function's percentiles, fps, hitch time and heat shares against values computed directly from every frame. A second script, run as the public role, checks that unlisted apps, malformed reports, floods and reading the raw table are all refused, that floods get the 429 answer the app retries on, that malformed rows stored earlier can't break the dashboard, and that upgrading from the first version works and keeps the apps already reporting. A third script checks the cases that most often mislead: partial GPU timing, mixed target rates, two apps with the same scene name, a report delivered two hours late, the same version in debug and release, one long run versus many sessions, missing GPU timing, a 48-hour gap and the timeline following a selection.</li>
           </ul>
         </section>
 
@@ -457,6 +475,8 @@ OctiMonitor.<span class="k">recordFrame</span>(interval: now - lastFrame, cpu: C
             <li><strong>Screen timing needs the presented handler.</strong> Apps that don't register it are timed from draw calls, and the data-completeness line says so.</li>
             <li><strong>GPU time needs Metal.</strong> Apps that don't read it from a Metal command buffer report frame timing only.</li>
             <li><strong>One command buffer per frame is assumed</strong> for GPU time. A renderer that splits a frame into several buffers should add their times together.</li>
+            <li><strong>CPU per frame is what the app reports.</strong> It is the time the app measures for building a frame and passes in, not the whole main thread, so on its own it can't show that a scene is CPU-bound.</li>
+            <li><strong>Phone models, not phones.</strong> Reports carry no device identifier, so the dashboard counts models: ten iPhone 14s are one model.</li>
             <li><strong>Heat has four levels.</strong> iOS doesn't give apps a temperature, only nominal, fair, serious and critical.</li>
             <li><strong>Some reports can still be lost,</strong> for example when the app crashes while offline. Each report counts the ones lost before it, and the dashboard shows the total.</li>
             <li><strong>Reports can't prove they come from the real app.</strong> Limits stop floods and malformed data, not plausible fakes; see Privacy and security.</li>
